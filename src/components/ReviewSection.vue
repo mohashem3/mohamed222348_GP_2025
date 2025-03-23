@@ -11,7 +11,11 @@
 
     <button class="submit-btn" @click="handleSubmitReview">Submit Review</button>
 
-    <p v-if="reviewSuccess" class="success-message">Review submitted successfully! ✅</p>
+    <p v-if="reviewSuccess" class="success-message">
+      Review submitted successfully! ✅<br />
+      Sentiment: <strong>{{ submittedSentiment }}</strong>
+    </p>
+
     <p v-if="reviewError" class="error-message">{{ reviewError }}</p>
   </div>
 </template>
@@ -37,6 +41,7 @@ export default {
       reviewText: '',
       reviewSuccess: false,
       reviewError: null,
+      submittedSentiment: '', // ✅ NEW
     }
   },
   methods: {
@@ -54,8 +59,23 @@ export default {
       }
 
       try {
-        await submitReview(user.uid, this.movieId, this.reviewText, 'neutral')
+        const response = await fetch(
+          'https://sentimentmodelmohamed222348gp-production.up.railway.app/predict',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: this.reviewText }),
+          },
+        )
+
+        const data = await response.json()
+        const sentiment = data.sentiment || 'neutral'
+
+        await submitReview(user.uid, this.movieId, this.reviewText, sentiment)
+
+        // ✅ Set UI state
         this.reviewSuccess = true
+        this.submittedSentiment = sentiment
         this.reviewText = ''
         this.reviewError = null
       } catch (error) {
