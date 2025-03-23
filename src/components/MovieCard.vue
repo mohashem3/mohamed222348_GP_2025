@@ -23,6 +23,7 @@
 <script>
 export default {
   props: {
+    movieId: [String, Number], // Ensure ID is passed correctly
     title: String,
     genre: String,
     description: String,
@@ -33,7 +34,15 @@ export default {
       alert(`Reviewing ${this.title}`)
     },
     handleDetails() {
-      alert(`Details for ${this.title}`)
+      if (!this.movieId) {
+        console.error('Movie ID is missing!')
+        return
+      }
+      this.$router.push({
+        name: 'MovieDetails',
+        params: { id: this.movieId }, // Only ID in params
+        query: { title: this.title }, // ✅ Title in query
+      })
     },
   },
 }

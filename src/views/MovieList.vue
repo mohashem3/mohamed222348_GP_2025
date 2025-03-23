@@ -9,6 +9,7 @@
       <MovieCard
         v-for="movie in movies"
         :key="movie.id"
+        :movieId="movie.id"
         :title="movie.title"
         :genre="movie.genre_ids.join(', ')"
         :description="movie.overview"
