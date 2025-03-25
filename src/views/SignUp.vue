@@ -1,188 +1,116 @@
+<template>
+  <div class="min-h-screen flex flex-col items-center justify-center bg-white-50 pt-12">
+    <!-- LOGO + TITLE (Outside the card) -->
+    <router-link to="/" class="flex items-center space-x-3 mb-6">
+      <img src="@/assets/img/blog-icon.svg" class="h-10 w-10" />
+      <span class="text-2xl font-bold text-gray-800">SentimentCinema</span>
+    </router-link>
+    <div class="w-[380px] bg-white rounded-xl shadow-xl overflow-hidden">
+      <div
+        class="text-white text-3xl font-bold text-center py-6 bg-gradient-to-r from-purple-500 to-blue-500"
+      >
+        Signup
+      </div>
+      <router-link
+        to="/"
+        class="absolute top-5 left-5 bg-blue-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium shadow hover:bg-gray-200 transition"
+      >
+        ← Back to Home
+      </router-link>
+
+      <form @submit.prevent="signUp" class="px-8 py-6">
+        <!-- Full Name -->
+        <div class="mb-5">
+          <input
+            v-model="name"
+            type="name"
+            required
+            placeholder="Name"
+            class="w-full px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div class="mb-5">
+          <input
+            v-model="email"
+            type="email"
+            required
+            placeholder="Email Address"
+            class="w-full px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div class="mb-5">
+          <input
+            v-model="password"
+            type="password"
+            required
+            placeholder="Password"
+            class="w-full px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <p v-if="errorMessage" class="text-red-600 text-sm mb-3">{{ errorMessage }}</p>
+
+        <div class="mb-5">
+          <input
+            type="submit"
+            value="Signup"
+            class="w-full py-3 text-white text-lg font-semibold bg-gradient-to-r from-purple-500 to-blue-500 rounded-full cursor-pointer hover:opacity-90 transition"
+          />
+        </div>
+
+        <div class="text-center text-sm text-gray-700">
+          Already a member?
+          <router-link to="/login" class="text-blue-500 hover:underline">Login</router-link>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
 <script setup>
 import { ref } from 'vue'
-import { auth } from '@/firebase/firebaseConfig' // Import Firebase Auth
+import { auth, db } from '@/firebase/firebaseConfig'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'vue-router'
+import Swal from 'sweetalert2'
 
 const email = ref('')
 const password = ref('')
-const errorMessage = ref('')
+const name = ref('')
 const router = useRouter()
 
 const signUp = async () => {
   try {
-    await createUserWithEmailAndPassword(auth, email.value, password.value)
-    router.push('/') // Redirect to homepage after successful signup
+    // Step 1: Create user in Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value)
+    const user = userCredential.user
+
+    // Step 2: Store additional info in Firestore
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      email: email.value,
+      name: name.value,
+      createdAt: new Date(),
+    })
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Signup Successful!',
+      text: 'Welcome to SentimentCinema!',
+      timer: 2000,
+      showConfirmButton: false,
+    })
+
+    router.push('/')
   } catch (error) {
-    errorMessage.value = error.message
+    Swal.fire({
+      icon: 'error',
+      title: 'Signup Failed',
+      text: error.message,
+    })
   }
 }
 </script>
-
-<template>
-  <div class="wrapper">
-    <div class="title">Signup Form</div>
-    <form @submit.prevent="signUp">
-      <div class="field">
-        <input v-model="email" type="email" required />
-        <label>Email Address</label>
-      </div>
-      <div class="field">
-        <input v-model="password" type="password" required />
-        <label>Password</label>
-      </div>
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-      <div class="field">
-        <input type="submit" value="Signup" />
-      </div>
-      <div class="signup-link">Already a member? <router-link to="/login">Login</router-link></div>
-    </form>
-  </div>
-</template>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
-}
-
-/* Center the form in the page */
-.signup-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: #f2f2f2;
-}
-
-.wrapper {
-  width: 380px;
-  height: 550px;
-  background: #fff;
-  border-radius: 15px;
-  box-shadow: 0px 15px 20px rgba(0, 0, 0, 0.1);
-}
-
-.wrapper .title {
-  font-size: 35px;
-  font-weight: 600;
-  text-align: center;
-  line-height: 100px;
-  color: #fff;
-  user-select: none;
-  border-radius: 15px 15px 0 0;
-  background: linear-gradient(-135deg, #c850c0, #4158d0);
-}
-
-.wrapper form {
-  padding: 10px 30px 50px 30px;
-}
-
-.wrapper form .field {
-  height: 50px;
-  width: 100%;
-  margin-top: 20px;
-  position: relative;
-}
-
-.wrapper form .field input {
-  height: 100%;
-  width: 100%;
-  outline: none;
-  font-size: 17px;
-  padding-left: 20px;
-  border: 1px solid lightgrey;
-  border-radius: 25px;
-  transition: all 0.3s ease;
-}
-
-.wrapper form .field input:focus,
-.wrapper form .field input:valid {
-  border-color: #4158d0;
-}
-
-.wrapper form .field label {
-  position: absolute;
-  top: 50%;
-  left: 20px;
-  color: #999999;
-  font-weight: 400;
-  font-size: 17px;
-  pointer-events: none;
-  transform: translateY(-50%);
-  transition: all 0.3s ease;
-}
-
-.wrapper form .field input:focus ~ label,
-.wrapper form .field input:valid ~ label {
-  top: 0%;
-  font-size: 16px;
-  color: #4158d0;
-  background: #fff;
-  transform: translateY(-50%);
-}
-
-form .content {
-  display: flex;
-  width: 100%;
-  height: 20px;
-  font-size: 16px;
-  align-items: center;
-  justify-content: space-around;
-}
-
-form .content .checkbox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-form .content input {
-  width: 15px;
-  height: 15px;
-  background: red;
-}
-
-form .content label {
-  color: #262626;
-  user-select: none;
-  padding-left: 5px;
-}
-
-form .field input[type='submit'] {
-  color: #fff;
-  border: none;
-  padding-left: 0;
-  margin-top: -10px;
-  font-size: 20px;
-  font-weight: 500;
-  cursor: pointer;
-  background: linear-gradient(-135deg, #c850c0, #4158d0);
-  transition: all 0.3s ease;
-}
-
-form .field input[type='submit']:active {
-  transform: scale(0.95);
-}
-
-form .signup-link {
-  color: #262626;
-  margin-top: 20px;
-  text-align: center;
-}
-
-form .pass-link a,
-form .signup-link a {
-  color: #4158d0;
-  text-decoration: none;
-}
-
-form .pass-link a:hover,
-form .signup-link a:hover {
-  text-decoration: underline;
-}
-</style>
