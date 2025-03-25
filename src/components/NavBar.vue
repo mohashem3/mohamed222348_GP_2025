@@ -55,23 +55,26 @@
             </router-link>
           </template>
 
-          <!-- When user IS logged in -->
           <template v-else>
-            <button
-              @click="logout"
-              class="bg-pink-500 hover:bg-cyan-500 transition text-white px-4 py-2 rounded-md text-sm font-semibold"
-            >
-              LOG OUT
-            </button>
+            <div class="flex items-center gap-6">
+              <!-- Logout Button -->
+              <button
+                @click="logout"
+                class="bg-pink-500 hover:bg-cyan-500 transition text-white px-4 py-2 rounded-md text-sm font-semibold"
+              >
+                LOG OUT
+              </button>
 
-            <!-- Profile Icon -->
-            <router-link to="/profile">
-              <img
-                src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
-                alt="User"
-                class="w-9 h-9 rounded-full object-cover cursor-pointer border-2 border-white"
-              />
-            </router-link>
+              <!-- Profile Icon + Name -->
+              <router-link to="/profile" class="flex flex-col items-center text-white">
+                <img
+                  src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
+                  alt="User"
+                  class="w-9 h-9 rounded-full object-cover border-2 border-white"
+                />
+                <span class="text-sm font-medium mt-1">{{ displayName }}</span>
+              </router-link>
+            </div>
           </template>
         </div>
       </div>
@@ -115,10 +118,9 @@
 import { useRouter } from 'vue-router'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/firebase/firebaseConfig'
-import { currentUser } from '@/firebase/userState'
-import { computed } from 'vue'
 import Swal from 'sweetalert2'
-
+import { computed } from 'vue'
+import { currentUser } from '@/firebase/userState'
 const router = useRouter()
 
 function logout() {
@@ -147,4 +149,5 @@ function logout() {
 }
 
 const isLoggedIn = computed(() => currentUser.value !== null)
+const displayName = computed(() => currentUser.value?.name || 'User')
 </script>

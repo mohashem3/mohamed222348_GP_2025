@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center bg-white-50 pt-12">
+  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-50 pt-24 pb-16">
     <!-- LOGO + TITLE (Outside the card) -->
     <router-link to="/" class="flex items-center space-x-3 mb-6">
       <img src="@/assets/img/blog-icon.svg" class="h-10 w-10" />

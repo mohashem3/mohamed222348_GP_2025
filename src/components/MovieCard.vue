@@ -1,107 +1,91 @@
 <template>
-  <div class="movie-card">
-    <!-- Movie Poster -->
-    <div class="movie-poster">
-      <img :src="poster" :alt="title" />
+  <div
+    class="rounded-xl overflow-hidden shadow-md bg-white hover:shadow-lg transition duration-300 w-[240px]"
+  >
+    <!-- Poster -->
+    <div class="relative">
+      <img :src="poster" :alt="title" class="w-full h-72 object-cover" />
+
+      <!-- Sentiment Badge -->
+      <div
+        v-if="sentiment !== null && sentiment !== undefined"
+        class="absolute bottom-2 right-2 bg-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full"
+      >
+        {{ sentiment }}% Positive
+      </div>
     </div>
 
-    <!-- Movie Info -->
-    <div class="movie-info">
-      <h3 class="movie-title">{{ title }}</h3>
-      <p class="movie-genre">{{ genre }}</p>
-      <p class="movie-description">{{ description }}</p>
+    <!-- Info -->
+    <div class="p-4">
+      <h3 class="text-lg font-semibold text-gray-900 tracking-tight truncate mb-1">
+        {{ title }}
+      </h3>
+      <p class="text-sm text-gray-500">
+        {{ genreName }}<span v-if="releaseYear"> ({{ releaseYear }})</span>
+      </p>
 
-      <!-- Actions -->
-      <div class="movie-actions">
-        <button @click="handleReview">Review</button>
-        <button @click="handleDetails">Details</button>
-      </div>
+      <!-- Button -->
+      <button
+        @click="handleReview"
+        class="w-full mt-4 bg-gray-100 text-sm text-gray-800 font-medium py-2 rounded-md hover:bg-gray-200 transition"
+      >
+        Add Review
+      </button>
     </div>
   </div>
 </template>
 
 <script>
+// Genre map
+const GENRE_MAP = {
+  28: 'Action',
+  12: 'Adventure',
+  16: 'Animation',
+  35: 'Comedy',
+  80: 'Crime',
+  99: 'Documentary',
+  18: 'Drama',
+  10751: 'Family',
+  14: 'Fantasy',
+  36: 'History',
+  27: 'Horror',
+  10402: 'Music',
+  9648: 'Mystery',
+  10749: 'Romance',
+  878: 'Sci-Fi',
+  10770: 'TV Movie',
+  53: 'Thriller',
+  10752: 'War',
+  37: 'Western',
+}
+
 export default {
   props: {
-    movieId: [String, Number], // Ensure ID is passed correctly
+    movieId: [String, Number],
     title: String,
-    genre: String,
-    description: String,
-    poster: String, // URL for movie poster
+    poster: String,
+    sentiment: Number,
+    genre: Array,
+    releaseDate: String,
+  },
+  computed: {
+    genreName() {
+      const id = this.genre?.[0]
+      return GENRE_MAP[id] || 'Unknown'
+    },
+    releaseYear() {
+      return this.releaseDate ? new Date(this.releaseDate).getFullYear() : null
+    },
   },
   methods: {
     handleReview() {
-      alert(`Reviewing ${this.title}`)
-    },
-    handleDetails() {
-      if (!this.movieId) {
-        console.error('Movie ID is missing!')
-        return
-      }
+      if (!this.movieId) return
       this.$router.push({
         name: 'MovieDetails',
-        params: { id: this.movieId }, // Only ID in params
-        query: { title: this.title }, // ✅ Title in query
+        params: { id: this.movieId },
+        query: { title: this.title },
       })
     },
   },
 }
 </script>
-
-<style scoped>
-.movie-card {
-  width: 250px;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  background: #fff;
-  transition: transform 0.2s ease-in-out;
-}
-
-.movie-card:hover {
-  transform: scale(1.05);
-}
-
-.movie-poster img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-}
-
-.movie-info {
-  padding: 10px;
-}
-
-.movie-title {
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.movie-genre {
-  color: #888;
-  font-size: 14px;
-}
-
-.movie-description {
-  font-size: 12px;
-  margin: 8px 0;
-}
-
-.movie-actions {
-  display: flex;
-  justify-content: space-between;
-}
-
-.movie-actions button {
-  background: #6200ea;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.movie-actions button:hover {
-  background: #3700b3;
-}
-</style>

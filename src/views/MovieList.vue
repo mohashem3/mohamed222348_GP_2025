@@ -11,9 +11,10 @@
         :key="movie.id"
         :movieId="movie.id"
         :title="movie.title"
-        :genre="movie.genre_ids.join(', ')"
+        :genre="movie.genre_ids"
         :description="movie.overview"
         :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
+        :releaseDate="movie.release_date"
       />
     </div>
 

@@ -1,5 +1,7 @@
+<script setup>
+import HomeSlider from '@/components/HomeSlider.vue'
+</script>
+
 <template>
-  <div class="bg-green-100 text-green-700 p-4 rounded-lg shadow-md text-xl">
-    🎉 Welcome to the sentiment analysis platform!
-  </div>
+  <HomeSlider />
 </template>

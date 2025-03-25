@@ -9,6 +9,9 @@ import './assets/tailwind.css'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase/firebaseConfig'
 import { currentUser } from './firebase/userState'
+import 'swiper/css'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
 
 const app = createApp(App)
 
