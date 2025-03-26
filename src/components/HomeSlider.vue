@@ -2,7 +2,7 @@
   <swiper
     :modules="[Pagination, Autoplay]"
     :pagination="{ clickable: true }"
-    :autoplay="{ delay: 2500 }"
+    :autoplay="{ delay: 4500 }"
     class="mySwiper"
   >
     <!-- HERO SLIDE -->

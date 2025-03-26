@@ -24,3 +24,13 @@ export const fetchMoviesByGenre = async (genreId) => {
     return []
   }
 }
+
+// tmdb.js
+export const searchMovies = async (query) => {
+  const API_KEY = import.meta.env.VITE_TMDB_API_KEY
+  const response = await fetch(
+    `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&api_key=${API_KEY}`,
+  )
+  const data = await response.json()
+  return data.results
+}

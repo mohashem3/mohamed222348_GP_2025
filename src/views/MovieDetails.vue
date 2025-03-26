@@ -3,8 +3,6 @@
     <h1 class="movie-title">Movie Details Page</h1>
     <p>Details for Movie ID: {{ movieId }}</p>
     <h2>Movie Title: {{ movieTitle }}</h2>
-
-    <!-- Review Section -->
     <ReviewSection :movieId="movieId" :movieTitle="movieTitle" />
   </div>
 </template>
@@ -17,7 +15,6 @@ export default {
   components: {
     ReviewSection,
   },
-  props: ['id'],
   computed: {
     movieId() {
       return this.$route.params.id || 'Unknown'

@@ -1,65 +1,78 @@
 <template>
-  <div class="movie-view">
-    <h1 class="page-title">Movies</h1>
+  <div class="movie-view bg-gray-100 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Title -->
+      <h1 class="text-2xl font-bold text-center mb-6">Movies</h1>
 
-    <p v-if="loading">Loading movies...</p>
-    <p v-if="error" class="error">{{ error }}</p>
+      <!-- Loading/Error -->
+      <p v-if="loading" class="text-center text-gray-500">Loading movies...</p>
+      <p v-if="error" class="text-center text-red-500">{{ error }}</p>
 
-    <div v-if="!loading && !error" class="movie-grid">
-      <MovieCard
-        v-for="movie in movies"
-        :key="movie.id"
-        :movieId="movie.id"
-        :title="movie.title"
-        :genre="movie.genre_ids"
-        :description="movie.overview"
-        :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
-        :releaseDate="movie.release_date"
-      />
-    </div>
-
-    <!-- Sexy Tailwind Pagination -->
-    <div v-if="!loading && !error" class="flex justify-center mt-10 space-x-2 text-sm font-medium">
-      <button
-        @click="prevPage"
-        :disabled="currentPage === 1"
-        class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      <!-- Movie Grid -->
+      <div
+        v-if="!loading && !error"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
       >
-        Previous
-      </button>
+        <MovieCard
+          v-for="movie in movies"
+          :key="movie.id"
+          :movieId="movie.id"
+          :title="movie.title"
+          :genre="movie.genre_ids"
+          :description="movie.overview"
+          :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
+          :releaseDate="movie.release_date"
+        />
+      </div>
 
-      <button
-        v-for="page in visiblePages"
-        :key="page"
-        @click="goToPage(page)"
-        :class="[
-          'px-4 py-2 rounded-md border',
-          currentPage === page
-            ? 'bg-indigo-500 text-white border-indigo-500'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
-        ]"
+      <!-- Pagination -->
+      <div
+        v-if="!loading && !error"
+        class="flex justify-center mt-10 space-x-2 text-sm font-medium"
       >
-        {{ page }}
-      </button>
+        <button
+          @click="prevPage"
+          :disabled="currentPage === 1"
+          class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Previous
+        </button>
 
-      <button
-        @click="nextPage"
-        :disabled="currentPage >= totalPages"
-        class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-      >
-        Next
-      </button>
+        <button
+          v-for="page in visiblePages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="[
+            'px-4 py-2 rounded-md border',
+            currentPage === page
+              ? 'bg-indigo-500 text-white border-indigo-500'
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+          ]"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          @click="nextPage"
+          :disabled="currentPage >= totalPages"
+          class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import MovieCard from '@/components/MovieCard.vue'
+// import MovieFilters from '@/components/MovieFilters.vue'
 import { fetchPopularMovies } from '@/services/tmdb.js'
 
 export default {
   components: {
     MovieCard,
+    // MovieFilters,
   },
   data() {
     return {
@@ -68,6 +81,7 @@ export default {
       error: null,
       currentPage: 1,
       totalPages: 1,
+      selectedGenres: [], // genre filter state
     }
   },
   computed: {
@@ -79,6 +93,12 @@ export default {
         range.push(i)
       }
       return range
+    },
+    filteredMovies() {
+      if (this.selectedGenres.length === 0) return this.movies
+      return this.movies.filter((movie) =>
+        movie.genre_ids?.some((id) => this.selectedGenres.includes(id)),
+      )
     },
   },
   methods: {
@@ -112,6 +132,9 @@ export default {
       this.currentPage = page
       this.loadMovies()
     },
+    handleGenreFilter(selectedGenres) {
+      this.selectedGenres = selectedGenres
+    },
   },
   created() {
     this.loadMovies()
@@ -121,10 +144,16 @@ export default {
 
 <style scoped>
 .movie-view {
+  margin-top: 120px;
+}
+</style>
+
+<style scoped>
+.movie-view {
   text-align: center;
   padding: 20px;
   background: #f4f4f4;
-  margin-top: 2200px;
+  margin-top: 2280px;
   margin-bottom: 100px;
 }
 

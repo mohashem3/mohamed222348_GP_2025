@@ -8,6 +8,7 @@ import Swal from 'sweetalert2'
 const email = ref('')
 const password = ref('')
 const router = useRouter()
+const errorMessage = ref('')
 
 const login = async () => {
   try {
@@ -23,6 +24,7 @@ const login = async () => {
 
     router.push('/')
   } catch (error) {
+    errorMessage.value = error.message
     Swal.fire({
       icon: 'error',
       title: 'Login Failed',
