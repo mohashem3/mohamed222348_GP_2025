@@ -18,11 +18,37 @@
       />
     </div>
 
-    <!-- Pagination Controls -->
-    <div v-if="!loading && !error" class="pagination">
-      <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
-      <span> Page {{ currentPage }} of {{ totalPages }} </span>
-      <button @click="nextPage" :disabled="currentPage >= totalPages">Next</button>
+    <!-- Sexy Tailwind Pagination -->
+    <div v-if="!loading && !error" class="flex justify-center mt-10 space-x-2 text-sm font-medium">
+      <button
+        @click="prevPage"
+        :disabled="currentPage === 1"
+        class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      >
+        Previous
+      </button>
+
+      <button
+        v-for="page in visiblePages"
+        :key="page"
+        @click="goToPage(page)"
+        :class="[
+          'px-4 py-2 rounded-md border',
+          currentPage === page
+            ? 'bg-indigo-500 text-white border-indigo-500'
+            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+        ]"
+      >
+        {{ page }}
+      </button>
+
+      <button
+        @click="nextPage"
+        :disabled="currentPage >= totalPages"
+        class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      >
+        Next
+      </button>
     </div>
   </div>
 </template>
@@ -40,19 +66,29 @@ export default {
       movies: [],
       loading: true,
       error: null,
-      currentPage: 1, // Track current page
-      totalPages: 1, // Store total pages from API response
+      currentPage: 1,
+      totalPages: 1,
     }
+  },
+  computed: {
+    visiblePages() {
+      const range = []
+      const start = Math.max(1, this.currentPage - 2)
+      const end = Math.min(this.totalPages, this.currentPage + 2)
+      for (let i = start; i <= end; i++) {
+        range.push(i)
+      }
+      return range
+    },
   },
   methods: {
     async loadMovies() {
       this.loading = true
       this.error = null
-
       try {
-        const data = await fetchPopularMovies(this.currentPage) // Fetch movies for the current page
+        const data = await fetchPopularMovies(this.currentPage)
         this.movies = data.results
-        this.totalPages = data.total_pages // Update total pages from API response
+        this.totalPages = data.total_pages
       } catch (err) {
         this.error = 'Failed to load movies'
         console.error(err)
@@ -72,6 +108,10 @@ export default {
         this.loadMovies()
       }
     },
+    goToPage(page) {
+      this.currentPage = page
+      this.loadMovies()
+    },
   },
   created() {
     this.loadMovies()
@@ -84,6 +124,8 @@ export default {
   text-align: center;
   padding: 20px;
   background: #f4f4f4;
+  margin-top: 2200px;
+  margin-bottom: 100px;
 }
 
 .page-title {
@@ -101,31 +143,5 @@ export default {
   margin: 0 auto;
 }
 
-/* Pagination styles */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px;
-}
-
-.pagination button {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  margin: 0 5px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.pagination button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.pagination span {
-  font-size: 16px;
-  font-weight: bold;
-}
+/* Removed old .pagination styles — replaced with Tailwind classes */
 </style>

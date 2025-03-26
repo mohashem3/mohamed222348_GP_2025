@@ -8,7 +8,9 @@
           <router-link to="/">
             <img src="@/assets/img/blog-icon.svg" alt="Logo" class="w-8 h-8" />
           </router-link>
-          <router-link to="/" class="text-xl font-bold">SentimentCinema</router-link>
+          <router-link to="/" class="text-xl font-bold text-white no-underline hover:text-pink-400">
+            SentimentCinema
+          </router-link>
         </div>
 
         <!-- Search -->
@@ -66,7 +68,7 @@
               </button>
 
               <!-- Profile Icon + Name -->
-              <router-link to="/profile" class="flex flex-col items-center text-white">
+              <router-link to="/profile" class="flex flex-col no-underline items-center text-white">
                 <img
                   src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
                   alt="User"
@@ -83,28 +85,28 @@
       <div class="border-t border-gray-700 pt-2 pb-3 flex justify-center space-x-6 text-sm">
         <router-link
           to="/"
-          class="px-4 py-2 rounded-md font-semibold text-white bg-gray-800 hover:bg-gray-700"
+          class="px-4 py-2 rounded-md no-underline font-semibold text-white bg-gray-800 hover:bg-gray-700"
           exact-active-class="bg-gray-700"
         >
           HOME
         </router-link>
         <router-link
           to="/about"
-          class="px-4 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"
+          class="px-4 py-2 rounded-md no-underline text-gray-400 hover:text-white hover:bg-gray-700"
           exact-active-class="text-white"
         >
           ABOUT
         </router-link>
         <router-link
           to="/profile"
-          class="px-4 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"
+          class="px-4 py-2 rounded-md no-underline text-gray-400 hover:text-white hover:bg-gray-700"
           exact-active-class="text-white"
         >
           PROFILE
         </router-link>
         <router-link
           to="/movies"
-          class="px-4 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700"
+          class="px-4 py-2 rounded-md no-underline text-gray-400 hover:text-white hover:bg-gray-700"
           exact-active-class="text-white"
         >
           MOVIES
