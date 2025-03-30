@@ -202,15 +202,14 @@
 
         <!-- PERSONAL INFO TAB -->
 
-        <div v-if="activeTab === 'info'">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-8">
-            {{ activeTabTitle }}
-          </h2>
-
+        <div
+          v-if="activeTab === 'info'"
+          class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-2xl px-10 py-12 space-y-10"
+        >
           <!-- Avatar -->
-          <div class="flex flex-col items-center mb-10">
+          <div class="flex flex-col items-center">
             <div
-              class="w-32 h-32 rounded-full bg-indigo-600 text-white flex items-center justify-center text-4xl font-bold"
+              class="w-32 h-32 rounded-full bg-indigo-600 text-white flex items-center justify-center text-4xl font-bold shadow-lg"
             >
               {{ avatarInitials }}
             </div>
@@ -218,49 +217,84 @@
           </div>
 
           <!-- Editable Fields -->
-          <div class="space-y-6 max-w-md mx-auto">
+          <div class="space-y-8">
             <!-- Username -->
-            <div class="flex items-center gap-4">
-              <input
-                v-model="editableFields.name"
-                :readonly="!editMode.name"
-                class="flex-1 px-4 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-indigo-400"
-              />
-              <button @click="editMode.name ? saveName() : (editMode.name = true)">
-                {{ editMode.name ? 'Save' : 'Edit' }}
-              </button>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+              <div class="flex items-center gap-4">
+                <input
+                  v-model="editableFields.name"
+                  :readonly="!editMode.name"
+                  class="flex-1 px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-800 bg-white shadow-sm"
+                />
+                <div v-if="editMode.name" class="flex gap-2">
+                  <button
+                    @click="saveName"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
+                  >
+                    Save
+                  </button>
+                  <button
+                    @click="editMode.name = false"
+                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <button
+                  v-else
+                  @click="editMode.name = true"
+                  class="text-indigo-600 font-medium hover:underline"
+                >
+                  Edit
+                </button>
+              </div>
             </div>
 
             <!-- Email -->
-            <div class="flex items-center gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
               <input
                 v-model="editableFields.email"
-                :readonly="!editMode.email"
-                class="flex-1 px-4 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-indigo-400"
+                readonly
+                class="w-full px-4 py-3 rounded-md border border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed"
               />
-              <button
-                @click="editMode.email ? saveEmail() : (editMode.email = true)"
-                class="text-sm font-medium text-indigo-600 hover:underline"
-              >
-                {{ editMode.email ? 'Save' : 'Edit' }}
-              </button>
+              <p class="text-xs text-gray-400 mt-1">Email can’t be changed</p>
             </div>
 
             <!-- Password -->
-            <div class="flex items-center gap-4">
-              <input
-                v-model="editableFields.password"
-                :readonly="!editMode.password"
-                type="password"
-                placeholder="********"
-                class="flex-1 px-4 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-indigo-400"
-              />
-              <button
-                @click="editMode.password ? savePassword() : (editMode.password = true)"
-                class="text-sm font-medium text-indigo-600 hover:underline"
-              >
-                {{ editMode.password ? 'Save' : 'Edit' }}
-              </button>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+              <div class="flex items-center gap-4">
+                <input
+                  v-model="editableFields.password"
+                  :readonly="!editMode.password"
+                  type="password"
+                  placeholder="********"
+                  class="flex-1 px-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-800 shadow-sm"
+                />
+                <div v-if="editMode.password" class="flex gap-2">
+                  <button
+                    @click="savePassword"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
+                  >
+                    Save
+                  </button>
+                  <button
+                    @click="editMode.password = false"
+                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <button
+                  v-else
+                  @click="editMode.password = true"
+                  class="text-indigo-600 font-medium hover:underline"
+                >
+                  Edit
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -286,7 +320,7 @@ import { db } from '../firebase/firebaseConfig'
 import MovieCard from '@/components/MovieCard.vue'
 import { clearWatchlist } from '../firebase/watchlistService'
 import Swal from 'sweetalert2'
-import { updateUserEmail, updateUserPassword } from '@/firebase/firebaseService'
+import { updateUserPassword, updateUserName } from '@/firebase/firebaseService'
 
 import { toRaw } from 'vue'
 console.log('raw currentUser:', toRaw(currentUser.value))
@@ -418,12 +452,11 @@ const removeFromWatchlistState = (movieId) => {
 }
 
 import { updateProfile } from 'firebase/auth'
-import { doc, updateDoc } from 'firebase/firestore'
+
 import { auth } from '@/firebase/firebaseConfig'
 
 // Personal Info States
 const isEditingName = ref(false)
-const isEditingEmail = ref(false)
 const isEditingPassword = ref(false)
 const editableFields = reactive({
   name: '',
@@ -436,7 +469,7 @@ const saveName = async () => {
   if (!auth.currentUser || !editableFields.name.trim()) return
   try {
     await updateProfile(auth.currentUser, { displayName: editableFields.name })
-    await updateDoc(doc(db, 'users', auth.currentUser.uid), { name: editableFields.name })
+    await updateUserName(auth.currentUser.uid, editableFields.name)
     currentUser.value.name = editableFields.name
     isEditingName.value = false
     Swal.fire('Updated!', 'Your name has been updated.', 'success')
@@ -446,33 +479,33 @@ const saveName = async () => {
   }
 }
 
-// Save Email
-const saveEmail = async () => {
-  if (!auth.currentUser || !editableFields.email.trim()) return
-  try {
-    await updateUserEmail(auth.currentUser.email, 'dummy-password', editableFields.email)
-
-    currentUser.value.email = editableFields.email
-    isEditingEmail.value = false
-    Swal.fire('Updated!', 'Your Email has been updated.', 'success')
-  } catch (err) {
-    console.error('Error updating email:', err)
-    Swal.fire('Error', 'Failed to update Email.', 'error')
-  }
-}
-
 // Save Password
 const savePassword = async () => {
   if (!auth.currentUser || !editableFields.password.trim()) return
+
+  const { value: currentPassword } = await Swal.fire({
+    title: 'Reauthenticate',
+    input: 'password',
+    inputLabel: 'Enter your current password',
+    inputPlaceholder: 'Current password',
+    inputAttributes: {
+      autocapitalize: 'off',
+      autocorrect: 'off',
+    },
+    showCancelButton: true,
+  })
+
+  if (!currentPassword) return
+
   try {
-    await updateUserPassword(auth.currentUser.email, 'dummy-password', editableFields.password)
+    await updateUserPassword(currentPassword, editableFields.password)
 
     editableFields.password = ''
     isEditingPassword.value = false
-    Swal.fire('Updated!', 'Your password has been changed.', 'success')
+    Swal.fire('Updated!', 'Password updated successfully.', 'success')
   } catch (err) {
     console.error('Error updating password:', err)
-    Swal.fire('Error', 'Failed to update password.', 'error')
+    Swal.fire('Error', 'Failed to update password. Check your current password.', 'error')
   }
 }
 
