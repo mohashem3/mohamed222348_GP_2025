@@ -222,13 +222,17 @@ export default {
       if (this.isFavorite) {
         await deleteDoc(favRef)
         this.isFavorite = false
+        this.$emit('removed', this.movieId) // 👈 Emit event to parent
       } else {
         await setDoc(favRef, {
           movieId: this.movieId,
           title: this.title,
           poster: this.poster,
+          genre: this.genre,
+          releaseDate: this.releaseDate,
           addedAt: new Date(),
         })
+
         this.isFavorite = true
       }
     },

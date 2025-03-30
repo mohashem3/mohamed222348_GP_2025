@@ -6,17 +6,25 @@ import { auth, db } from './firebaseConfig'
 
 export const currentUser = ref(null)
 
+export const loadUserProfile = async (userId) => {
+  const docRef = doc(db, 'users', userId)
+  const docSnap = await getDoc(docRef)
+
+  if (docSnap.exists()) {
+    const userData = docSnap.data()
+
+    currentUser.value = {
+      uid: userId,
+      email: auth.currentUser.email,
+      name: userData.name,
+      displayName: userData.name, // 👈 add this line
+    }
+  }
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const docRef = doc(db, 'users', user.uid)
-    const docSnap = await getDoc(docRef)
-    if (docSnap.exists()) {
-      currentUser.value = {
-        uid: user.uid,
-        email: user.email,
-        name: docSnap.data().name,
-      }
-    }
+    await loadUserProfile(user.uid)
   } else {
     currentUser.value = null
   }

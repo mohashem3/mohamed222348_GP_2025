@@ -79,7 +79,10 @@
               >
                 LOG OUT
               </button>
-              <router-link to="/profile" class="flex flex-col no-underline items-center text-white">
+              <router-link
+                to="/userprofile"
+                class="flex flex-col no-underline items-center text-white"
+              >
                 <img
                   :src="avatarURL"
                   alt="User"
@@ -107,7 +110,7 @@
           >ABOUT</router-link
         >
         <router-link
-          to="/profile"
+          to="/userprofile"
           class="px-4 py-2 rounded-md no-underline text-gray-400 hover:text-white hover:bg-gray-700"
           exact-active-class="text-white"
           >PROFILE</router-link

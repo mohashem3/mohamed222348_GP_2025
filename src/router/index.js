@@ -7,6 +7,7 @@ import MovieDetails from '@/views/MovieDetails.vue'
 import CompareView from '@/views/CompareView.vue'
 import Swal from 'sweetalert2'
 import { currentUser } from '@/firebase/userState'
+import UserProfile from '@/views/UserProfile.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -16,16 +17,12 @@ const router = createRouter({
     { path: '/login', component: LogIn, name: 'LogIn' },
     { path: '/movies', component: MovieList, name: 'Movies' },
     { path: '/compare', component: CompareView, name: 'Compare' },
+    { path: '/userprofile', component: UserProfile, name: 'UserProfile' },
     {
       path: '/movie/:id',
       name: 'MovieDetails',
       component: MovieDetails,
       props: true,
-    },
-    {
-      path: '/profile',
-      name: 'Profile',
-      component: () => import('@/views/ProfileView.vue'),
     },
     {
       path: '/about',
@@ -35,7 +32,7 @@ const router = createRouter({
   ],
 })
 
-const protectedRoutes = ['/profile', '/movies']
+const protectedRoutes = ['/userprofile', '/movies']
 
 router.beforeEach((to, from, next) => {
   if (protectedRoutes.includes(to.path) && !currentUser.value) {
