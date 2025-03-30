@@ -1,18 +1,35 @@
 import { db } from './firebaseConfig'
-import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore'
+import { format } from 'date-fns'
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp,
+  doc,
+  getDoc,
+  onSnapshot,
+} from 'firebase/firestore'
 
-// Submit a review
-export const submitReview = async (userId, movieId, reviewText, sentiment) => {
+// ✅ SUBMIT a new review
+export const submitReview = async (userId, movieId, reviewText, sentiment, rating) => {
   try {
+    const userRef = doc(db, 'users', userId)
+    const userSnap = await getDoc(userRef)
+    const userName = userSnap.exists() ? userSnap.data().name || 'Anonymous' : 'Anonymous'
+
     const reviewRef = collection(db, 'reviews')
     await addDoc(reviewRef, {
       userId,
-      movieId,
+      movieId: String(movieId),
       reviewText,
       sentiment,
-      timestamp: serverTimestamp(),
+      rating,
+      userName,
+      createdAt: serverTimestamp(),
     })
-    console.log('Review submitted successfully!')
+    console.log('✅ Review submitted successfully!')
     return true
   } catch (error) {
     console.error('Error submitting review:', error)
@@ -20,20 +37,34 @@ export const submitReview = async (userId, movieId, reviewText, sentiment) => {
   }
 }
 
-// Get all reviews for a specific movie
+// ✅ GET all reviews for a specific movie (with username + formatted date)
 export const getReviewsForMovie = async (movieId) => {
   try {
-    const reviewsQuery = query(
-      collection(db, 'reviews'),
-      where('movieId', '==', String(movieId)), // force to string to match Firestore
-    )
-
+    const reviewsQuery = query(collection(db, 'reviews'), where('movieId', '==', String(movieId)))
     const querySnapshot = await getDocs(reviewsQuery)
 
-    const reviews = []
-    querySnapshot.forEach((doc) => {
-      reviews.push({ id: doc.id, ...doc.data() })
-    })
+    const reviews = await Promise.all(
+      querySnapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data()
+
+        const createdAtFormatted =
+          data.timestamp && data.timestamp.toDate
+            ? format(data.timestamp.toDate(), 'MMMM d, yyyy')
+            : ''
+
+        const userRef = doc(db, 'users', data.userId)
+        const userSnap = await getDoc(userRef)
+        const userData = userSnap.exists() ? userSnap.data() : {}
+        const userName = userData.name || 'Anonymous'
+
+        return {
+          id: docSnap.id,
+          ...data,
+          userName,
+          createdAt: createdAtFormatted,
+        }
+      }),
+    )
 
     return reviews
   } catch (error) {
@@ -42,44 +73,7 @@ export const getReviewsForMovie = async (movieId) => {
   }
 }
 
-// ✅ NEW: Get sentiment summary for a movie
-export const getSentimentSummary = async (movieId) => {
-  try {
-    const reviewsQuery = query(collection(db, 'reviews'), where('movieId', '==', movieId))
-    const querySnapshot = await getDocs(reviewsQuery)
-
-    let total = 0
-    let positive = 0
-    let negative = 0
-
-    querySnapshot.forEach((doc) => {
-      const sentiment = doc.data().sentiment
-      if (sentiment === 'positive') positive++
-      else if (sentiment === 'negative') negative++
-      total++
-    })
-
-    if (total === 0) return { type: 'none' }
-
-    if (positive === negative) {
-      return { type: 'neutral', percentage: 50 }
-    }
-
-    const isPositive = positive > negative
-    const percentage = Math.round(((isPositive ? positive : negative) / total) * 100)
-
-    return {
-      type: isPositive ? 'positive' : 'negative',
-      percentage,
-    }
-  } catch (error) {
-    console.error('Error getting sentiment summary:', error)
-    return { type: 'error' }
-  }
-}
-
-// ✅ NEW: Get positive sentiment percentage for a movie
-// ✅ Get positive + total count
+// ✅ Get sentiment stats
 export const getSentimentStats = async (movieId) => {
   try {
     const reviews = await getReviewsForMovie(movieId)
@@ -90,4 +84,20 @@ export const getSentimentStats = async (movieId) => {
     console.error('Error getting sentiment stats:', err)
     return { positiveCount: 0, reviewCount: 0 }
   }
+}
+
+// 🔁 LISTEN to real-time review updates
+export const listenToReviews = (movieId, callback) => {
+  const q = query(collection(db, 'reviews'), where('movieId', '==', String(movieId)))
+  return onSnapshot(q, (snapshot) => {
+    const reviews = snapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate ? format(data.createdAt.toDate(), 'MMMM d, yyyy') : '',
+      }
+    })
+    callback(reviews)
+  })
 }

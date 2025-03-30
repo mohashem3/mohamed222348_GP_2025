@@ -15,8 +15,8 @@ const hideNav = computed(() => {
   <!-- Hide NavBar if we're on LogIn or SignUp -->
   <NavBar v-if="!hideNav" />
 
-  <!-- Remove top padding if NavBar is hidden -->
-  <div :class="[hideNav ? 'px-4' : 'pt-[120px] px-4']">
+  <!-- Add padding only if NavBar is visible -->
+  <main :class="[hideNav ? 'px-4' : 'pt-[1250px] px-4']">
     <router-view />
-  </div>
+  </main>
 </template>

@@ -71,7 +71,7 @@ button:hover {
 </style> -->
 
 <template>
-  <div class="bg-white p-12 rounded-2xl max-w-7xl mx-auto my-20 pt-[1000px]">
+  <div class="bg-white p-12 rounded-2xl max-w-7xl mx-auto my-20 pt-[1400px]">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
       <!-- Poster -->
       <div>
@@ -79,12 +79,50 @@ button:hover {
       </div>
 
       <!-- Info -->
+
       <div class="flex flex-col justify-between h-full">
         <div>
+          <div
+            v-if="sentiment"
+            :class="[
+              'inline-block text-xs font-bold px-3 py-1 rounded-full mb-2',
+              sentiment.label === 'Positive'
+                ? 'bg-green-600 text-white'
+                : sentiment.label === 'Negative'
+                  ? 'bg-red-600 text-white'
+                  : sentiment.label === 'Mixed'
+                    ? 'bg-gray-300 text-black'
+                    : 'bg-black text-white',
+            ]"
+          >
+            <template v-if="sentiment.percentage !== null">
+              <span>{{ sentiment.percentage }}%</span> {{ sentiment.label }}
+            </template>
+            <template v-else>
+              {{ sentiment.label }}
+            </template>
+          </div>
+
           <h1 class="text-4xl font-bold text-black mb-4">{{ movie?.title || 'Loading...' }}</h1>
           <p class="text-gray-800 text-base leading-relaxed mb-8">
             {{ movie?.overview || 'No description available.' }}
           </p>
+          <!-- Star Rating -->
+          <div class="flex items-center gap-1 text-yellow-400 text-xl mb-6">
+            <template v-for="n in 5" :key="n">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                class="w-6 h-6"
+                :class="n <= starRating ? 'text-yellow-400' : 'text-gray-300'"
+              >
+                <path
+                  d="M12 .587l3.668 7.568L24 9.423l-6 5.858L19.335 24 12 20.077 4.665 24 6 15.281 0 9.423l8.332-1.268z"
+                />
+              </svg>
+            </template>
+          </div>
 
           <!-- Info Table -->
           <div class="mb-10">
@@ -127,12 +165,12 @@ button:hover {
               ▶ Watch Trailer
             </button>
 
-            <!-- Movie -->
+            <!-- Movie
             <button
               class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold min-w-[160px] text-center"
             >
               🎬 Watch Movie
-            </button>
+            </button> -->
 
             <!-- Watchlist -->
             <button
@@ -214,6 +252,30 @@ button:hover {
       </swiper>
     </div>
   </div>
+  <!-- Analytics Section -->
+  <div class="max-w-6xl mx-auto my-16">
+    <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Audience Insights</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+      <div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">Sentiment Analysis</h3>
+        <div
+          v-if="pieChartData.datasets[0].data.some((d) => d > 0)"
+          class="flex justify-center mb-10"
+        >
+          <div class="max-w-xs w-full">
+            <Pie :data="pieChartData" :options="pieChartOptions" />
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">Rating Distribution</h3>
+        <RatingChart :movieId="movieId" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Section -->
+  <ReviewSection :movieId="movieId" />
 </template>
 
 <script setup>
@@ -227,12 +289,49 @@ import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import { Navigation } from 'swiper/modules'
+import ReviewSection from '@/components/ReviewSection.vue'
+import RatingChart from '@/components/charts/RatingChart.vue'
+import { listenToReviews } from '@/firebase/reviewService'
+
+// import { getReviewsForMovie } from '@/firebase/reviewService'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import { Pie } from 'vue-chartjs'
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 const route = useRoute()
 const movieId = route.params.id
 const movie = ref(null)
 const cast = ref([])
 const trailerUrl = ref(null)
+const sentiment = ref(null)
+const starRating = ref(0)
+
+const pieChartData = ref({
+  labels: ['Positive', 'Negative'],
+  datasets: [
+    {
+      backgroundColor: ['#10B981', '#EF4444'],
+      data: [0, 0],
+    },
+  ],
+})
+
+const pieChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: {
+        color: '#374151',
+        font: {
+          size: 14,
+        },
+      },
+    },
+  },
+}
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY
 
@@ -272,6 +371,7 @@ const fetchMovieDetails = async () => {
       fullCast.unshift({ ...director, character: 'Director' })
     }
     cast.value = fullCast
+
     const videoRes = await axios.get(
       `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${API_KEY}`,
     )
@@ -370,18 +470,13 @@ const fetchProviders = async () => {
       `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${API_KEY}`,
     )
     const data = res.data.results?.US
-
-    // Combine all available types
     const all = [
       ...(data?.flatrate || []),
       ...(data?.buy || []),
       ...(data?.rent || []),
       ...(data?.ads || []),
     ]
-
-    // Remove duplicates (by provider_id)
     const unique = Array.from(new Map(all.map((p) => [p.provider_id, p])).values())
-
     providers.value = unique
   } catch (err) {
     console.error('Failed to fetch providers:', err)
@@ -392,9 +487,85 @@ const getProviderLink = (name) => {
   return PROVIDER_LINKS[name] || ''
 }
 
+// const fetchSentiment = async () => {
+//   try {
+//     const reviews = await getReviewsForMovie(String(movieId))
+//     const total = reviews.length
+
+//     if (total === 0) {
+//       sentiment.value = { label: 'No Reviews', percentage: null }
+//       starRating.value = 0
+//       pieChartData.value.datasets[0].data = [0, 0]
+//     } else {
+//       const positives = reviews.filter((r) => r.sentiment === 'positive').length
+//       const negatives = reviews.filter((r) => r.sentiment === 'negative').length
+
+//       // Sentiment pie chart update
+//       pieChartData.value.datasets[0].data = [positives, negatives]
+
+//       // Star Rating logic based on only positive count
+//       const ratio = positives / total
+//       if (ratio >= 0.8) starRating.value = 5
+//       else if (ratio >= 0.6) starRating.value = 4
+//       else if (ratio >= 0.4) starRating.value = 3
+//       else if (ratio >= 0.2) starRating.value = 2
+//       else if (ratio > 0) starRating.value = 1
+//       else starRating.value = 0
+
+//       // Sentiment badge
+//       if (positives > negatives) {
+//         sentiment.value = { label: 'Positive', percentage: Math.round((positives / total) * 100) }
+//       } else if (negatives > positives) {
+//         sentiment.value = { label: 'Negative', percentage: Math.round((negatives / total) * 100) }
+//       } else {
+//         sentiment.value = { label: 'Mixed', percentage: null }
+//       }
+//     }
+//   } catch (err) {
+//     console.error('Failed to calculate sentiment:', err)
+//   }
+// }
+
 onMounted(async () => {
   await fetchMovieDetails()
   await checkFavorite()
   await fetchProviders()
+  // 🔁 Real-time chart updates
+  listenToReviews(movieId, (reviews) => {
+    const total = reviews.length
+    const positives = reviews.filter((r) => r.sentiment === 'positive').length
+    const negatives = reviews.filter((r) => r.sentiment === 'negative').length
+
+    // Update pie chart
+    pieChartData.value.datasets[0].data = [positives, negatives]
+
+    // Update sentiment label
+    if (total === 0) {
+      sentiment.value = { label: 'No Reviews', percentage: null }
+      starRating.value = 0
+    } else {
+      const ratio = positives / total
+      if (ratio >= 0.8) starRating.value = 5
+      else if (ratio >= 0.6) starRating.value = 4
+      else if (ratio >= 0.4) starRating.value = 3
+      else if (ratio >= 0.2) starRating.value = 2
+      else if (ratio > 0) starRating.value = 1
+      else starRating.value = 0
+
+      if (positives > negatives) {
+        sentiment.value = {
+          label: 'Positive',
+          percentage: Math.round((positives / total) * 100),
+        }
+      } else if (negatives > positives) {
+        sentiment.value = {
+          label: 'Negative',
+          percentage: Math.round((negatives / total) * 100),
+        }
+      } else {
+        sentiment.value = { label: 'Mixed', percentage: null }
+      }
+    }
+  })
 })
 </script>

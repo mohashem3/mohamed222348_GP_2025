@@ -81,7 +81,7 @@
               </button>
               <router-link to="/profile" class="flex flex-col no-underline items-center text-white">
                 <img
-                  src="https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
+                  :src="avatarURL"
                   alt="User"
                   class="w-9 h-9 rounded-full object-cover border-2 border-white"
                 />
@@ -118,6 +118,12 @@
           exact-active-class="text-white"
           >MOVIES</router-link
         >
+        <router-link
+          to="/compare"
+          class="px-4 py-2 rounded-md no-underline text-gray-400 hover:text-white hover:bg-gray-700"
+          exact-active-class="text-white"
+          >COMPARE</router-link
+        >
       </div>
     </div>
   </nav>
@@ -135,6 +141,15 @@ import { searchMovies } from '@/services/tmdb'
 const router = useRouter()
 const searchQuery = ref('')
 const searchResults = ref([])
+
+const avatarURL = computed(() => {
+  if (currentUser.value?.photoURL) {
+    return currentUser.value.photoURL
+  } else {
+    const name = currentUser.value?.name || 'Anonymous'
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&chars=2`
+  }
+})
 
 const handleSearch = async () => {
   if (searchQuery.value.trim().length < 2) {
