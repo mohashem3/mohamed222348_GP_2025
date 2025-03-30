@@ -393,6 +393,8 @@ const handleSubmitReview = async () => {
     Swal.fire('Error', 'Something went wrong. Try again later.', 'error')
   } finally {
     isSubmitting.value = false // Stop loading spinner
+    reviewText.value = ''
+    selectedRating.value = 0
   }
 }
 

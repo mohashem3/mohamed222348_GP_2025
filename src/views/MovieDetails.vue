@@ -1,81 +1,9 @@
-<!-- <template>
-  <div class="movie-details">
-    <h1 class="movie-title">Movie Details Page</h1>
-    <p>Details for Movie ID: {{ movieId }}</p>
-    <h2>Movie Title: {{ movieTitle }}</h2>
-    <ReviewSection :movieId="movieId" :movieTitle="movieTitle" />
-  </div>
-</template>
-
-<script>
-import ReviewSection from '@/components/ReviewSection.vue'
-
-export default {
-  name: 'MovieDetails',
-  components: {
-    ReviewSection,
-  },
-  computed: {
-    movieId() {
-      return this.$route.params.id || 'Unknown'
-    },
-    movieTitle() {
-      return this.$route.query.title || 'Unknown Title'
-    },
-  },
-}
-</script>
-
-<style scoped>
-.movie-details {
-  text-align: center;
-  padding: 20px;
-}
-
-.review-section {
-  margin-top: 20px;
-}
-
-textarea {
-  width: 100%;
-  height: 100px;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-button {
-  margin-top: 10px;
-  padding: 10px 15px;
-  background-color: #6200ea;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-button:hover {
-  background-color: #3700b3;
-}
-
-.success-message {
-  color: green;
-  margin-top: 10px;
-}
-
-.error-message {
-  color: red;
-  margin-top: 10px;
-}
-</style> -->
-
 <template>
-  <div class="bg-white p-12 rounded-2xl max-w-7xl mx-auto my-20 pt-[1400px]">
+  <div class="bg-white p-12 rounded-2xl max-w-7xl mx-auto my-20 pt-[50px]">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
       <!-- Poster -->
       <div>
-        <img :src="posterUrl" alt="Movie Poster" class="rounded-xl w-full object-cover h-[550px]" />
+        <img :src="posterUrl" alt="Movie Poster" class="rounded-xl w-full object-cover h-[600px]" />
       </div>
 
       <!-- Info -->
@@ -486,45 +414,6 @@ const fetchProviders = async () => {
 const getProviderLink = (name) => {
   return PROVIDER_LINKS[name] || ''
 }
-
-// const fetchSentiment = async () => {
-//   try {
-//     const reviews = await getReviewsForMovie(String(movieId))
-//     const total = reviews.length
-
-//     if (total === 0) {
-//       sentiment.value = { label: 'No Reviews', percentage: null }
-//       starRating.value = 0
-//       pieChartData.value.datasets[0].data = [0, 0]
-//     } else {
-//       const positives = reviews.filter((r) => r.sentiment === 'positive').length
-//       const negatives = reviews.filter((r) => r.sentiment === 'negative').length
-
-//       // Sentiment pie chart update
-//       pieChartData.value.datasets[0].data = [positives, negatives]
-
-//       // Star Rating logic based on only positive count
-//       const ratio = positives / total
-//       if (ratio >= 0.8) starRating.value = 5
-//       else if (ratio >= 0.6) starRating.value = 4
-//       else if (ratio >= 0.4) starRating.value = 3
-//       else if (ratio >= 0.2) starRating.value = 2
-//       else if (ratio > 0) starRating.value = 1
-//       else starRating.value = 0
-
-//       // Sentiment badge
-//       if (positives > negatives) {
-//         sentiment.value = { label: 'Positive', percentage: Math.round((positives / total) * 100) }
-//       } else if (negatives > positives) {
-//         sentiment.value = { label: 'Negative', percentage: Math.round((negatives / total) * 100) }
-//       } else {
-//         sentiment.value = { label: 'Mixed', percentage: null }
-//       }
-//     }
-//   } catch (err) {
-//     console.error('Failed to calculate sentiment:', err)
-//   }
-// }
 
 onMounted(async () => {
   await fetchMovieDetails()

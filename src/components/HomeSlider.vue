@@ -107,7 +107,7 @@ export default {
   height: 500px;
   font-size: 24px;
   background: #000;
-  margin-top: 2400px;
+  margin-top: 100px;
   margin-bottom: 100px;
 }
 

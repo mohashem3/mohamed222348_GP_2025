@@ -153,7 +153,7 @@ export default {
   text-align: center;
   padding: 20px;
   background: #f4f4f4;
-  margin-top: 2280px;
+  margin-top: 100px;
   margin-bottom: 100px;
 }
 

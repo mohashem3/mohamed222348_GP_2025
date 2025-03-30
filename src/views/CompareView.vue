@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-white pt-80 pb-12 px-4 sm:px-8">
+  <div class="min-h-screen bg-white pt-32 pb-12 px-4 sm:px-8">
     <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">Compare Two Movies</h2>
 
     <div class="flex flex-col md:flex-row justify-center items-start gap-12">

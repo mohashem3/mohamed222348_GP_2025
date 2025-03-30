@@ -43,7 +43,7 @@
 
           <!-- Dropdown -->
           <ul
-            v-if="searchResults.length > 0"
+            v-if="searchQuery && searchResults.length > 0"
             class="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 divide-y divide-gray-200"
           >
             <li
@@ -133,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/firebase/firebaseConfig'
@@ -193,6 +193,12 @@ function logout() {
       })
     })
 }
+
+watch(searchQuery, (newVal) => {
+  if (!newVal.trim()) {
+    searchResults.value = []
+  }
+})
 
 const isLoggedIn = computed(() => currentUser.value !== null)
 const displayName = computed(() => currentUser.value?.name || 'User')
