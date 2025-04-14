@@ -22,6 +22,7 @@
           :description="movie.overview"
           :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
           :releaseDate="movie.release_date"
+          :matchedGenre="this.$route.query.genre"
         />
       </div>
 
@@ -66,14 +67,16 @@
 
 <script>
 import MovieCard from '@/components/MovieCard.vue'
-// import MovieFilters from '@/components/MovieFilters.vue'
-import { fetchPopularMovies } from '@/services/tmdb.js'
+import {
+  fetchPopularMovies,
+  searchMoviesByTitle,
+  getActorMovies,
+  searchMoviesByDirector,
+  searchMoviesByGenre,
+} from '@/services/tmdb'
 
 export default {
-  components: {
-    MovieCard,
-    // MovieFilters,
-  },
+  components: { MovieCard },
   data() {
     return {
       movies: [],
@@ -81,7 +84,7 @@ export default {
       error: null,
       currentPage: 1,
       totalPages: 1,
-      selectedGenres: [], // genre filter state
+      selectedGenres: [],
     }
   },
   computed: {
@@ -89,9 +92,7 @@ export default {
       const range = []
       const start = Math.max(1, this.currentPage - 2)
       const end = Math.min(this.totalPages, this.currentPage + 2)
-      for (let i = start; i <= end; i++) {
-        range.push(i)
-      }
+      for (let i = start; i <= end; i++) range.push(i)
       return range
     },
     filteredMovies() {
@@ -111,6 +112,62 @@ export default {
         this.totalPages = data.total_pages
       } catch (err) {
         this.error = 'Failed to load movies'
+        console.error(err)
+      } finally {
+        this.loading = false
+      }
+    },
+    async searchByTitle(title) {
+      this.loading = true
+      this.error = null
+      try {
+        const data = await searchMoviesByTitle(title)
+        this.movies = data
+        this.totalPages = 1
+      } catch (err) {
+        this.error = 'Failed to search movies'
+        console.error(err)
+      } finally {
+        this.loading = false
+      }
+    },
+    async searchByActor(actorId) {
+      this.loading = true
+      this.error = null
+      try {
+        const data = await getActorMovies(actorId)
+        this.movies = data
+        this.totalPages = 1
+      } catch (err) {
+        this.error = 'Failed to fetch actor movies'
+        console.error(err)
+      } finally {
+        this.loading = false
+      }
+    },
+    async searchByDirector(name) {
+      this.loading = true
+      this.error = null
+      try {
+        const data = await searchMoviesByDirector(name)
+        this.movies = data
+        this.totalPages = 1
+      } catch (err) {
+        this.error = 'Failed to search movies by director'
+        console.error(err)
+      } finally {
+        this.loading = false
+      }
+    },
+    async searchByGenre(query) {
+      this.loading = true
+      this.error = null
+      try {
+        const data = await searchMoviesByGenre(query)
+        this.movies = data
+        this.totalPages = 1
+      } catch (err) {
+        this.error = 'Failed to search movies by genre'
         console.error(err)
       } finally {
         this.loading = false
@@ -136,8 +193,44 @@ export default {
       this.selectedGenres = selectedGenres
     },
   },
+  watch: {
+    '$route.query.title': {
+      immediate: true,
+      handler(newTitle) {
+        if (newTitle) {
+          this.searchByTitle(newTitle)
+        }
+      },
+    },
+    '$route.query.actor': {
+      immediate: true,
+      handler(newActorId) {
+        if (newActorId) {
+          this.searchByActor(newActorId)
+        }
+      },
+    },
+    '$route.query.director': {
+      immediate: true,
+      handler(newDirector) {
+        if (newDirector) {
+          this.searchByDirector(newDirector)
+        }
+      },
+    },
+    '$route.query.genre': {
+      immediate: true,
+      handler(newGenre) {
+        if (newGenre) {
+          this.searchByGenre(newGenre)
+        }
+      },
+    },
+  },
   created() {
-    this.loadMovies()
+    if (!this.$route.query.title && !this.$route.query.actor) {
+      this.loadMovies()
+    }
   },
 }
 </script>

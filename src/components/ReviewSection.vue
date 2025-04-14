@@ -109,9 +109,9 @@
                   ? 'bg-green-100 text-green-800 pulse-glow-positive'
                   : 'bg-red-100 text-red-800 pulse-glow-negative',
               ]"
-              :title="'This is how our AI interpreted your review sentiment.'"
+              :title="`This is how our AI interpreted the review sentiment with ${review.confidence || 100}% confidence.`"
             >
-              {{ review.sentiment }}
+              ({{ review.confidence || 100 }}%) {{ review.sentiment }}
             </span>
           </div>
 
@@ -251,6 +251,7 @@ import { submitReview, updateReview, listenToReviews, deleteReview } from '@/fir
 import Swal from 'sweetalert2'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/firebaseConfig'
+const SENTIMENT_API = import.meta.env.VITE_SENTIMENT_API
 
 const props = defineProps({
   movieId: [String, Number],
@@ -330,19 +331,15 @@ const handleSubmitReview = async () => {
   }
 
   try {
-    isSubmitting.value = true // Start loading spinner
+    isSubmitting.value = true
 
-    const response = await fetch(
-      'https://sentimentmodelmohamed222348gp-production.up.railway.app/predict',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: reviewText.value }),
-      },
-    )
+    const response = await fetch(SENTIMENT_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: reviewText.value }),
+    })
 
-    const data = await response.json()
-    const sentiment = data.sentiment || 'neutral'
+    const { sentiment = 'neutral', confidence = 0 } = await response.json()
 
     const userDoc = await getDoc(doc(db, 'users', user.uid))
     const userData = userDoc.exists() ? userDoc.data() : {}
@@ -355,36 +352,37 @@ const handleSubmitReview = async () => {
       sentiment,
       selectedRating.value,
       userName,
+      confidence,
     )
 
     Swal.fire({
       title: '🎉 Review Sent!',
       html: `
-    <p>Your review was submitted successfully.</p>
+        <p>Your review was submitted successfully.</p>
 
-    <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
-      Review Sentiment:
-    </p>
+        <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
+          Review Sentiment:
+        </p>
 
-    <div style="
-      display: inline-block;
-      padding: 12px 24px;
-      margin-top: 10px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1.5rem;
-      text-transform: uppercase;
-      box-shadow: 0 0 18px ${sentiment === 'positive' ? '#4ade80' : '#f87171'};
-      background-color: ${sentiment === 'positive' ? '#dcfce7' : '#fee2e2'};
-      color: ${sentiment === 'positive' ? '#166534' : '#7f1d1d'};
-    ">
-      ${sentiment}
-    </div>
+        <div style="
+          display: inline-block;
+          padding: 12px 24px;
+          margin-top: 10px;
+          border-radius: 14px;
+          font-weight: 800;
+          font-size: 1.5rem;
+          text-transform: uppercase;
+          box-shadow: 0 0 18px ${sentiment === 'positive' ? '#4ade80' : '#f87171'};
+          background-color: ${sentiment === 'positive' ? '#dcfce7' : '#fee2e2'};
+          color: ${sentiment === 'positive' ? '#166534' : '#7f1d1d'};
+        ">
+          ${sentiment} (${confidence}%)
+        </div>
 
-    <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
-      (AI analysis of your review's tone)
-    </p>
-  `,
+        <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+          (AI analysis of your review's tone)
+        </p>
+      `,
       icon: 'success',
       confirmButtonColor: '#6366f1',
     })
@@ -392,7 +390,7 @@ const handleSubmitReview = async () => {
     console.error(error)
     Swal.fire('Error', 'Something went wrong. Try again later.', 'error')
   } finally {
-    isSubmitting.value = false // Stop loading spinner
+    isSubmitting.value = false
     reviewText.value = ''
     selectedRating.value = 0
   }
@@ -422,52 +420,49 @@ const saveEdit = async (review) => {
       return
     }
 
-    const response = await fetch(
-      'https://sentimentmodelmohamed222348gp-production.up.railway.app/predict',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: editedText.value }),
-      },
-    )
+    const response = await fetch(SENTIMENT_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: editedText.value }),
+    })
 
-    const data = await response.json()
-    const sentiment = data.sentiment || 'neutral'
+    const { sentiment = 'neutral', confidence = 0 } = await response.json()
 
     await updateReview(review.id, {
       reviewText: editedText.value,
       sentiment,
       rating: editedRating.value,
+      confidence,
     })
 
     Swal.fire({
-      title: '🎉 Review Sent!',
+      title: '🎉 Review Updated!',
       html: `
-    <p>Your review was submitted successfully.</p>
+        <p>Your review was updated successfully.</p>
 
-    <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
-      Review Sentiment:
-    </p>
+        <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
+          Updated Sentiment:
+        </p>
 
-    <div style="
-      display: inline-block;
-      padding: 12px 24px;
-      margin-top: 10px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1.5rem;
-      text-transform: uppercase;
-      box-shadow: 0 0 18px ${sentiment === 'positive' ? '#4ade80' : '#f87171'};
-      background-color: ${sentiment === 'positive' ? '#dcfce7' : '#fee2e2'};
-      color: ${sentiment === 'positive' ? '#166534' : '#7f1d1d'};
-    ">
-      ${sentiment}
-    </div>
+        <div style="
+          display: inline-block;
+          padding: 12px 24px;
+          margin-top: 10px;
+          border-radius: 14px;
+          font-weight: 800;
+          font-size: 1.5rem;
+          text-transform: uppercase;
+          box-shadow: 0 0 18px ${sentiment === 'positive' ? '#4ade80' : '#f87171'};
+          background-color: ${sentiment === 'positive' ? '#dcfce7' : '#fee2e2'};
+          color: ${sentiment === 'positive' ? '#166534' : '#7f1d1d'};
+        ">
+          ${sentiment} (${confidence}%)
+        </div>
 
-    <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
-      (AI analysis of your review's tone)
-    </p>
-  `,
+        <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+          (AI analysis of your updated review)
+        </p>
+      `,
       icon: 'success',
       confirmButtonColor: '#6366f1',
     })

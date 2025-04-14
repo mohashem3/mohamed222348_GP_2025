@@ -18,7 +18,7 @@ import {
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY
 
 // ✅ SUBMIT a new review
-export const submitReview = async (userId, movieId, reviewText, sentiment, rating) => {
+export const submitReview = async (userId, movieId, reviewText, sentiment, rating, confidence) => {
   try {
     const userRef = doc(db, 'users', userId)
     const userSnap = await getDoc(userRef)
@@ -30,6 +30,7 @@ export const submitReview = async (userId, movieId, reviewText, sentiment, ratin
       movieId: String(movieId),
       reviewText,
       sentiment,
+      confidence,
       rating,
       userName,
       createdAt: serverTimestamp(),

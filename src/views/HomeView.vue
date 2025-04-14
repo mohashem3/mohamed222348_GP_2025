@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import HomeSlider from '@/components/HomeSlider.vue'
 import MovieSwiper from '@/components/MovieSwiper.vue'
+import GenreTags from '@/components/GenreTags.vue' // ✅ Added
 import { fetchPopularMovies } from '@/services/tmdb'
 import { getSentimentStats } from '@/firebase/reviewService'
 
@@ -35,6 +36,10 @@ onMounted(async () => {
 <template>
   <HomeSlider />
 
+  <!-- ✅ New Genre Tags Section -->
+  <GenreTags />
+
+  <!-- Existing swipers -->
   <MovieSwiper title="Newest Releases" :allMovies="allMovies" filterType="newest" />
   <MovieSwiper title="Top Rated" :allMovies="allMovies" filterType="topRated" />
   <MovieSwiper title="Action Movies" :allMovies="allMovies" filterType="action" />

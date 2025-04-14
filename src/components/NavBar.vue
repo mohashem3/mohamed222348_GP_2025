@@ -13,12 +13,20 @@
           </router-link>
         </div>
 
-        <!-- Search -->
-        <div class="w-full max-w-md mx-6 relative">
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <!-- Search Type + Input Container -->
+        <div class="w-full max-w-md mx-6 relative z-50">
+          <!-- Input + Type Selector -->
+          <div
+            class="flex bg-gray-800 text-white rounded-md overflow-hidden shadow-sm ring-1 ring-gray-700 focus-within:ring-2 focus-within:ring-pink-500"
+          >
+            <!-- Search Type Button -->
+            <button
+              @click="showTypeDropdown = !showTypeDropdown"
+              class="flex items-center justify-between w-28 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-sm font-medium border-r border-gray-600 focus:outline-none"
+            >
+              {{ searchType.charAt(0).toUpperCase() + searchType.slice(1) }}
               <svg
-                class="h-5 w-5 text-gray-400"
+                class="w-4 h-4 ml-1 text-gray-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -27,21 +35,40 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2a7.5 7.5 0 010 15z"
+                  d="M19 9l-7 7-7-7"
                 />
               </svg>
-            </div>
-            <input
-              v-model="searchQuery"
-              @input="handleSearch"
-              @keydown.enter.prevent
-              type="text"
-              placeholder="Search for movies..."
-              class="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
-            />
-          </div>
+            </button>
 
-          <!-- Dropdown -->
+            <!-- Input Field -->
+            <div class="flex-grow relative">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-4 pr-2">
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-4.35-4.35M16.65 16.65A7.5 7.5 0 1116.65 2a7.5 7.5 0 010 15z"
+                  />
+                </svg>
+              </div>
+
+              <input
+                v-model="searchQuery"
+                @input="handleSearch"
+                @keydown.enter.prevent="handleEnterKey"
+                type="text"
+                placeholder="Search for movies..."
+                class="w-full pl-12 pr-4 py-2 bg-gray-800 text-white placeholder-gray-400 focus:outline-none"
+              />
+            </div>
+          </div>
+          <!-- SEARCH RESULTS DROPDOWN -->
           <ul
             v-if="searchQuery && searchResults.length > 0"
             class="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 divide-y divide-gray-200"
@@ -49,10 +76,35 @@
             <li
               v-for="result in searchResults"
               :key="result.id"
-              @click="goToMovie(result.id, result.title)"
+              @click="
+                searchType === 'title'
+                  ? goToMovie(result.id, result.title)
+                  : searchType === 'actor'
+                    ? goToActor(result)
+                    : searchType === 'director'
+                      ? goToDirector(result)
+                      : searchType === 'genre'
+                        ? goToGenre(result)
+                        : null
+              "
               class="px-5 py-3 text-gray-800 font-medium hover:bg-pink-100 hover:text-pink-800 transition duration-200 cursor-pointer"
             >
-              {{ result.title }}
+              {{ searchType === 'title' ? result.title : result.name }}
+            </li>
+          </ul>
+
+          <!-- ABSOLUTE DROPDOWN OUTSIDE FLEX -->
+          <ul
+            v-if="showTypeDropdown"
+            class="absolute left-0 mt-2 w-32 bg-white text-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50"
+          >
+            <li v-for="type in ['title', 'actor', 'director', 'genre']" :key="type">
+              <button
+                @click="selectSearchType(type)"
+                class="w-full text-left px-4 py-2 text-sm hover:bg-pink-100 hover:text-pink-800 transition"
+              >
+                {{ type.charAt(0).toUpperCase() + type.slice(1) }}
+              </button>
             </li>
           </ul>
         </div>
@@ -63,13 +115,15 @@
             <router-link
               to="/login"
               class="bg-pink-500 hover:bg-cyan-500 transition text-white px-4 py-2 rounded-md text-sm font-semibold"
-              >LOG IN</router-link
             >
+              LOG IN
+            </router-link>
             <router-link
               to="/signup"
               class="bg-pink-500 hover:bg-cyan-500 transition text-white px-4 py-2 rounded-md text-sm font-semibold"
-              >SIGN UP</router-link
             >
+              SIGN UP
+            </router-link>
           </template>
           <template v-else>
             <div class="flex items-center gap-6">
@@ -139,11 +193,20 @@ import { signOut } from 'firebase/auth'
 import { auth } from '@/firebase/firebaseConfig'
 import Swal from 'sweetalert2'
 import { currentUser } from '@/firebase/userState'
-import { searchMovies } from '@/services/tmdb'
+
+import {
+  searchMoviesByTitle,
+  searchActors,
+  searchDirectors,
+  getGenreSuggestions,
+} from '@/services/tmdb'
 
 const router = useRouter()
+
 const searchQuery = ref('')
 const searchResults = ref([])
+const searchType = ref('title')
+const showTypeDropdown = ref(false)
 
 const avatarURL = computed(() => {
   if (currentUser.value?.photoURL) {
@@ -155,18 +218,76 @@ const avatarURL = computed(() => {
 })
 
 const handleSearch = async () => {
-  if (searchQuery.value.trim().length < 2) {
+  const query = searchQuery.value.trim()
+  if (query.length < 2) {
     searchResults.value = []
     return
   }
-  const results = await searchMovies(searchQuery.value.trim())
-  searchResults.value = results.slice(0, 5) // limit results
+
+  let results = []
+  try {
+    if (searchType.value === 'title') {
+      results = await searchMoviesByTitle(query)
+    } else if (searchType.value === 'actor') {
+      results = await searchActors(query)
+    } else if (searchType.value === 'director') {
+      results = await searchDirectors(query) // ← fix
+    } else if (searchType.value === 'genre') {
+      results = getGenreSuggestions(query)
+    }
+  } catch (err) {
+    console.error(`Search failed for type ${searchType.value}:`, err)
+  }
+
+  searchResults.value = results.slice(0, 5)
 }
 
 const goToMovie = (id, title) => {
   searchResults.value = []
   searchQuery.value = ''
   router.push({ name: 'MovieDetails', params: { id }, query: { title } })
+}
+
+const goToActor = (actor) => {
+  searchResults.value = []
+  searchQuery.value = ''
+  router.push({ name: 'Movies', query: { actor: actor.id, name: actor.name } })
+}
+
+const goToDirector = (person) => {
+  searchQuery.value = ''
+  searchResults.value = []
+  router.push({ name: 'Movies', query: { director: person.name } })
+}
+
+const goToGenre = (genre) => {
+  searchResults.value = []
+  searchQuery.value = ''
+  router.push({ name: 'Movies', query: { genre: genre.name.toLowerCase() } })
+}
+
+const handleEnterKey = () => {
+  const query = searchQuery.value.trim()
+  if (!query) return
+
+  if (searchType.value === 'title') {
+    router.push({ name: 'Movies', query: { title: query } })
+  } else if (searchType.value === 'actor') {
+    router.push({ name: 'Movies', query: { actor: query } })
+  } else if (searchType.value === 'director') {
+    router.push({ name: 'Movies', query: { director: query } })
+  } else if (searchType.value === 'genre') {
+    router.push({ name: 'Movies', query: { genre: query } })
+  }
+
+  searchQuery.value = ''
+  searchResults.value = []
+}
+
+const selectSearchType = (type) => {
+  searchType.value = type
+  showTypeDropdown.value = false
+  handleSearch()
 }
 
 function logout() {

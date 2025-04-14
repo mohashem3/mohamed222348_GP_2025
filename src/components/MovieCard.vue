@@ -134,6 +134,7 @@ export default {
     poster: String,
     genre: Array,
     releaseDate: String,
+    matchedGenre: String, // ✅ New prop from MovieList.vue
   },
   data() {
     return {
@@ -145,6 +146,9 @@ export default {
   },
   computed: {
     genreName() {
+      if (this.matchedGenre) {
+        return this.matchedGenre.charAt(0).toUpperCase() + this.matchedGenre.slice(1)
+      }
       const id = this.genre?.[0]
       return GENRE_MAP[id] || 'Unknown'
     },
@@ -161,7 +165,7 @@ export default {
 
       this.reviewCount = total
 
-      // Set sentiment badge (this logic stays)
+      // Set sentiment badge
       if (total === 0) {
         this.sentiment = { label: 'No Reviews', percentage: null }
       } else if (positiveReviews > negativeReviews) {
@@ -178,7 +182,7 @@ export default {
         this.sentiment = { label: 'Mixed', percentage: null }
       }
 
-      // Set star rating based on pure positive count
+      // Set star rating
       if (total > 0) {
         const ratio = positiveReviews / total
         if (ratio >= 0.8) this.starRating = 5
@@ -222,7 +226,7 @@ export default {
       if (this.isFavorite) {
         await deleteDoc(favRef)
         this.isFavorite = false
-        this.$emit('removed', this.movieId) // 👈 Emit event to parent
+        this.$emit('removed', this.movieId)
       } else {
         await setDoc(favRef, {
           movieId: this.movieId,
