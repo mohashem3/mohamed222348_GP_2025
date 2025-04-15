@@ -10,14 +10,14 @@
       <div
         v-if="sentiment"
         :class="[
-          'absolute bottom-2 right-2 text-white text-xs font-bold px-3 py-1 rounded-full',
+          'absolute bottom-2 right-2 text-xs font-bold px-3 py-1 rounded-full text-white',
           sentiment.label === 'Positive'
-            ? 'bg-green-600'
+            ? 'bg-green-500 shadow-[0_0_18px_rgba(34,197,94,0.8)]'
             : sentiment.label === 'Negative'
-              ? 'bg-red-600'
+              ? 'bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.8)]'
               : sentiment.label === 'Mixed'
-                ? 'bg-gray-300 text-black'
-                : 'bg-black',
+                ? 'bg-yellow-400 text-yellow-900 shadow-[0_0_18px_rgba(234,179,8,0.8)]'
+                : 'bg-gray-400',
         ]"
       >
         <template v-if="sentiment.percentage !== null">
@@ -160,36 +160,37 @@ export default {
     try {
       const reviews = await getReviewsForMovie(String(this.movieId))
       const total = reviews.length
-      const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
-      const negativeReviews = reviews.filter((r) => r.sentiment === 'negative').length
-
       this.reviewCount = total
 
-      // Set sentiment badge
       if (total === 0) {
         this.sentiment = { label: 'No Reviews', percentage: null }
-      } else if (positiveReviews > negativeReviews) {
-        this.sentiment = {
-          label: 'Positive',
-          percentage: Math.round((positiveReviews / total) * 100),
-        }
-      } else if (negativeReviews > positiveReviews) {
-        this.sentiment = {
-          label: 'Negative',
-          percentage: Math.round((negativeReviews / total) * 100),
-        }
+        this.starRating = 0
+        return
+      }
+
+      const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
+      const negativeReviews = reviews.filter((r) => r.sentiment === 'negative').length
+      const mixedReviews = reviews.filter((r) => r.sentiment === 'mixed').length
+
+      const positivePercent = (positiveReviews / total) * 100
+      const negativePercent = (negativeReviews / total) * 100
+      const mixedPercent = (mixedReviews / total) * 100
+
+      // 🎯 Determine dominant sentiment
+      if (positivePercent > 50) {
+        this.sentiment = { label: 'Positive', percentage: Math.round(positivePercent) }
+      } else if (negativePercent > 50) {
+        this.sentiment = { label: 'Negative', percentage: Math.round(negativePercent) }
+      } else if (mixedPercent > 50) {
+        this.sentiment = { label: 'Mixed', percentage: Math.round(mixedPercent) }
       } else {
         this.sentiment = { label: 'Mixed', percentage: null }
       }
 
-      // Set star rating
+      // Set star rating based on actual user ratings
       if (total > 0) {
-        const ratio = positiveReviews / total
-        if (ratio >= 0.8) this.starRating = 5
-        else if (ratio >= 0.6) this.starRating = 4
-        else if (ratio >= 0.4) this.starRating = 3
-        else if (ratio >= 0.2) this.starRating = 2
-        else this.starRating = 1
+        const totalRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0)
+        this.starRating = Math.round(totalRating / total)
       } else {
         this.starRating = 0
       }

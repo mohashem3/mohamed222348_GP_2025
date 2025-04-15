@@ -72,6 +72,7 @@
         <option value="oldest">Sort by Oldest</option>
         <option value="positive">Positive Reviews</option>
         <option value="negative">Negative Reviews</option>
+        <option value="mixed">Mixed Reviews</option>
         <option value="mine">My Reviews</option>
       </select>
     </div>
@@ -103,15 +104,18 @@
             <!-- Sentiment Badge -->
             <!-- Sentiment Badge with Tooltip & Animation -->
             <span
-              class="inline-block px-4 py-2 rounded-full text-sm font-bold uppercase transition-transform"
+              class="inline-block px-4 py-2 rounded-full text-sm font-bold uppercase text-center transition-transform"
               :class="[
                 review.sentiment === 'positive'
                   ? 'bg-green-100 text-green-800 pulse-glow-positive'
-                  : 'bg-red-100 text-red-800 pulse-glow-negative',
+                  : review.sentiment === 'negative'
+                    ? 'bg-red-100 text-red-800 pulse-glow-negative'
+                    : 'bg-yellow-100 text-yellow-800 pulse-glow-mixed',
               ]"
+              :style="{ minWidth: '140px', display: 'inline-block' }"
               :title="`This is how our AI interpreted the review sentiment with ${review.confidence || 100}% confidence.`"
             >
-              ({{ review.confidence || 100 }}%) {{ review.sentiment }}
+              {{ review.sentiment.toUpperCase() }} ({{ review.confidence || 100 }}%)
             </span>
           </div>
 
@@ -282,6 +286,9 @@ const filteredReviews = computed(() => {
     case 'negative':
       result = result.filter((r) => r.sentiment === 'negative')
       break
+    case 'mixed':
+      result = result.filter((r) => r.sentiment === 'mixed')
+      break
     case 'oldest':
       result = result.sort((a, b) => a.createdAt - b.createdAt)
       break
@@ -339,7 +346,13 @@ const handleSubmitReview = async () => {
       body: JSON.stringify({ text: reviewText.value }),
     })
 
-    const { sentiment = 'neutral', confidence = 0 } = await response.json()
+    let { sentiment = 'neutral', confidence = 0 } = await response.json()
+    confidence = Math.round(confidence) // Round for readability
+
+    // Inject "mixed" sentiment if confidence is low
+    if (confidence >= 45 && confidence <= 55) {
+      sentiment = 'mixed'
+    }
 
     const userDoc = await getDoc(doc(db, 'users', user.uid))
     const userData = userDoc.exists() ? userDoc.data() : {}
@@ -351,38 +364,44 @@ const handleSubmitReview = async () => {
       reviewText.value,
       sentiment,
       selectedRating.value,
-      userName,
+      userName, // re-add this
       confidence,
     )
 
     Swal.fire({
       title: '🎉 Review Sent!',
       html: `
-        <p>Your review was submitted successfully.</p>
+    <p>Your review was submitted successfully.</p>
 
-        <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
-          Review Sentiment:
-        </p>
+    <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
+      Review Sentiment:
+    </p>
 
-        <div style="
-          display: inline-block;
-          padding: 12px 24px;
-          margin-top: 10px;
-          border-radius: 14px;
-          font-weight: 800;
-          font-size: 1.5rem;
-          text-transform: uppercase;
-          box-shadow: 0 0 18px ${sentiment === 'positive' ? '#4ade80' : '#f87171'};
-          background-color: ${sentiment === 'positive' ? '#dcfce7' : '#fee2e2'};
-          color: ${sentiment === 'positive' ? '#166534' : '#7f1d1d'};
-        ">
-          ${sentiment} (${confidence}%)
-        </div>
+    <div style="
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 10px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      box-shadow: 0 0 18px ${
+        sentiment === 'positive' ? '#4ade80' : sentiment === 'negative' ? '#f87171' : '#facc15'
+      };
+      background-color: ${
+        sentiment === 'positive' ? '#dcfce7' : sentiment === 'negative' ? '#fee2e2' : '#fef9c3'
+      };
+      color: ${
+        sentiment === 'positive' ? '#166534' : sentiment === 'negative' ? '#7f1d1d' : '#92400e'
+      };
+    ">
+      ${sentiment.toUpperCase()} (${confidence}%)
+    </div>
 
-        <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
-          (AI analysis of your review's tone)
-        </p>
-      `,
+    <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+      (AI analysis of your review's tone)
+    </p>
+  `,
       icon: 'success',
       confirmButtonColor: '#6366f1',
     })
@@ -426,7 +445,12 @@ const saveEdit = async (review) => {
       body: JSON.stringify({ text: editedText.value }),
     })
 
-    const { sentiment = 'neutral', confidence = 0 } = await response.json()
+    let { sentiment = 'neutral', confidence = 0 } = await response.json()
+    confidence = Math.round(confidence)
+
+    if (confidence >= 45 && confidence <= 55) {
+      sentiment = 'mixed'
+    }
 
     await updateReview(review.id, {
       reviewText: editedText.value,
@@ -438,31 +462,37 @@ const saveEdit = async (review) => {
     Swal.fire({
       title: '🎉 Review Updated!',
       html: `
-        <p>Your review was updated successfully.</p>
+    <p>Your review was updated successfully.</p>
 
-        <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
-          Updated Sentiment:
-        </p>
+    <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
+      Updated Sentiment:
+    </p>
 
-        <div style="
-          display: inline-block;
-          padding: 12px 24px;
-          margin-top: 10px;
-          border-radius: 14px;
-          font-weight: 800;
-          font-size: 1.5rem;
-          text-transform: uppercase;
-          box-shadow: 0 0 18px ${sentiment === 'positive' ? '#4ade80' : '#f87171'};
-          background-color: ${sentiment === 'positive' ? '#dcfce7' : '#fee2e2'};
-          color: ${sentiment === 'positive' ? '#166534' : '#7f1d1d'};
-        ">
-          ${sentiment} (${confidence}%)
-        </div>
+    <div style="
+      display: inline-block;
+      padding: 12px 24px;
+      margin-top: 10px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      box-shadow: 0 0 18px ${
+        sentiment === 'positive' ? '#4ade80' : sentiment === 'negative' ? '#f87171' : '#facc15'
+      };
+      background-color: ${
+        sentiment === 'positive' ? '#dcfce7' : sentiment === 'negative' ? '#fee2e2' : '#fef9c3'
+      };
+      color: ${
+        sentiment === 'positive' ? '#166534' : sentiment === 'negative' ? '#7f1d1d' : '#92400e'
+      };
+    ">
+      ${sentiment.toUpperCase()} (${confidence}%)
+    </div>
 
-        <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
-          (AI analysis of your updated review)
-        </p>
-      `,
+    <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+      (AI analysis of your updated review)
+    </p>
+  `,
       icon: 'success',
       confirmButtonColor: '#6366f1',
     })
@@ -545,6 +575,25 @@ onUnmounted(() => {
     transform: scale(1);
     box-shadow: 0 0 12px rgba(255, 80, 80, 0.4);
   }
+}
+
+@keyframes pulseGlowMixed {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 12px rgba(255, 230, 0, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 28px rgba(255, 230, 0, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 12px rgba(255, 230, 0, 0.4);
+  }
+}
+
+.pulse-glow-mixed {
+  animation: pulseGlowMixed 1.8s infinite ease-in-out;
 }
 
 .pulse-glow-positive {

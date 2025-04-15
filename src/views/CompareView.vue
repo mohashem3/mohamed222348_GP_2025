@@ -35,6 +35,10 @@
             :releaseDate="selected1.release_date"
           />
 
+          <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">
+            Audience Reaction (AI-Powered)
+          </h3>
+
           <PieChart
             v-if="pieData1"
             :labels="pieData1.labels"
@@ -82,6 +86,10 @@
             :genre="selected2.genre_ids"
             :releaseDate="selected2.release_date"
           />
+
+          <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">
+            Audience Reaction (AI-Powered)
+          </h3>
 
           <PieChart
             v-if="pieData2"
@@ -156,11 +164,12 @@ const loadPieChartData = async (movieId, field) => {
     const reviews = await getReviewsForMovie(String(movieId))
     const positive = reviews.filter((r) => r.sentiment === 'positive').length
     const negative = reviews.filter((r) => r.sentiment === 'negative').length
+    const mixed = reviews.filter((r) => r.sentiment === 'mixed').length
 
     const data = {
-      labels: ['Positive', 'Negative'],
-      values: [positive, negative],
-      colors: ['#10b981', '#ef4444', '#9ca3af'],
+      labels: ['Positive', 'Negative', 'Mixed'],
+      values: [positive, negative, mixed],
+      colors: ['#10B981', '#EF4444', '#FACC15'], // green, red, yellow
     }
 
     if (field === 1) pieData1.value = data

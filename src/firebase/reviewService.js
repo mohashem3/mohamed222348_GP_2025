@@ -18,7 +18,15 @@ import {
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY
 
 // ✅ SUBMIT a new review
-export const submitReview = async (userId, movieId, reviewText, sentiment, rating, confidence) => {
+export const submitReview = async (
+  userId,
+  movieId,
+  reviewText,
+  sentiment,
+  rating,
+  userName,
+  confidence,
+) => {
   try {
     const userRef = doc(db, 'users', userId)
     const userSnap = await getDoc(userRef)
@@ -34,7 +42,9 @@ export const submitReview = async (userId, movieId, reviewText, sentiment, ratin
       rating,
       userName,
       createdAt: serverTimestamp(),
+      createdAtMillis: Date.now(),
     })
+
     console.log('✅ Review submitted successfully!')
     return true
   } catch (error) {
@@ -160,7 +170,7 @@ export const listenToReviews = (movieId, callback) => {
   const q = query(
     collection(db, 'reviews'),
     where('movieId', '==', String(movieId)),
-    orderBy('createdAt', 'desc'),
+    orderBy('createdAtMillis', 'desc'), // most recent first
   )
   return onSnapshot(q, (snapshot) => {
     const reviews = snapshot.docs.map((doc) => {

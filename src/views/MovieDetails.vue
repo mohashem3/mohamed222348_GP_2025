@@ -13,15 +13,16 @@
           <div
             v-if="sentiment"
             :class="[
-              'inline-block text-xs font-bold px-3 py-1 rounded-full mb-2',
+              'inline-block text-xs font-bold px-3 py-1 rounded-full text-white',
               sentiment.label === 'Positive'
-                ? 'bg-green-600 text-white'
+                ? 'bg-green-500 shadow-[0_0_18px_rgba(34,197,94,0.8)]'
                 : sentiment.label === 'Negative'
-                  ? 'bg-red-600 text-white'
+                  ? 'bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.8)]'
                   : sentiment.label === 'Mixed'
-                    ? 'bg-gray-300 text-black'
-                    : 'bg-black text-white',
+                    ? 'bg-yellow-400 text-yellow-900 shadow-[0_0_18px_rgba(234,179,8,0.8)]'
+                    : 'bg-gray-400',
             ]"
+            :title="`This is how our AI interpreted the review sentiment${sentiment.percentage !== null ? ' with ' + sentiment.percentage + '% confidence.' : '.'}`"
           >
             <template v-if="sentiment.percentage !== null">
               <span>{{ sentiment.percentage }}%</span> {{ sentiment.label }}
@@ -184,8 +185,11 @@
   <div class="max-w-6xl mx-auto my-16">
     <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Audience Insights</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+      <!-- Sentiment Pie Chart -->
       <div>
-        <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">Sentiment Analysis</h3>
+        <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">
+          Audience Reaction (AI-Powered)
+        </h3>
         <div
           v-if="pieChartData.datasets[0].data.some((d) => d > 0)"
           class="flex justify-center mb-10"
@@ -195,8 +199,10 @@
           </div>
         </div>
       </div>
+
+      <!-- Rating Bar Chart -->
       <div>
-        <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">Rating Distribution</h3>
+        <h3 class="text-xl font-semibold text-gray-700 mb-4 text-center">Rating Breakdown</h3>
         <RatingChart :movieId="movieId" />
       </div>
     </div>
@@ -235,12 +241,13 @@ const trailerUrl = ref(null)
 const sentiment = ref(null)
 const starRating = ref(0)
 
+// ✅ Initialize with all 3 sentiment types
 const pieChartData = ref({
-  labels: ['Positive', 'Negative'],
+  labels: ['Positive', 'Negative', 'Mixed'],
   datasets: [
     {
-      backgroundColor: ['#10B981', '#EF4444'],
-      data: [0, 0],
+      backgroundColor: ['#10B981', '#EF4444', '#FACC15'], // green, red, yellow
+      data: [0, 0, 0], // must match labels length!
     },
   ],
 })
@@ -420,40 +427,44 @@ onMounted(async () => {
   await checkFavorite()
   await fetchProviders()
   // 🔁 Real-time chart updates
+  // 🔁 Real-time sentiment and rating updates
   listenToReviews(movieId, (reviews) => {
     const total = reviews.length
-    const positives = reviews.filter((r) => r.sentiment === 'positive').length
-    const negatives = reviews.filter((r) => r.sentiment === 'negative').length
+    const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
+    const negativeReviews = reviews.filter((r) => r.sentiment === 'negative').length
+    const mixedReviews = reviews.filter((r) => r.sentiment === 'mixed').length
 
-    // Update pie chart
-    pieChartData.value.datasets[0].data = [positives, negatives]
+    const totalRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0)
 
-    // Update sentiment label
+    const positivePercent = (positiveReviews / total) * 100
+    const negativePercent = (negativeReviews / total) * 100
+    const mixedPercent = (mixedReviews / total) * 100
+
+    // ✅ Update Pie Chart
+    pieChartData.value = {
+      labels: ['Positive', 'Negative', 'Mixed'],
+      datasets: [
+        {
+          backgroundColor: ['#10B981', '#EF4444', '#FACC15'], // Green, Red, Yellow
+          data: [positiveReviews, negativeReviews, mixedReviews],
+        },
+      ],
+    }
+
+    // ✅ Star Rating from user input
+    starRating.value = total > 0 ? Math.round(totalRating / total) : 0
+
+    // ✅ Sentiment Badge Logic
     if (total === 0) {
       sentiment.value = { label: 'No Reviews', percentage: null }
-      starRating.value = 0
+    } else if (positivePercent > 50) {
+      sentiment.value = { label: 'Positive', percentage: Math.round(positivePercent) }
+    } else if (negativePercent > 50) {
+      sentiment.value = { label: 'Negative', percentage: Math.round(negativePercent) }
+    } else if (mixedPercent > 50) {
+      sentiment.value = { label: 'Mixed', percentage: Math.round(mixedPercent) }
     } else {
-      const ratio = positives / total
-      if (ratio >= 0.8) starRating.value = 5
-      else if (ratio >= 0.6) starRating.value = 4
-      else if (ratio >= 0.4) starRating.value = 3
-      else if (ratio >= 0.2) starRating.value = 2
-      else if (ratio > 0) starRating.value = 1
-      else starRating.value = 0
-
-      if (positives > negatives) {
-        sentiment.value = {
-          label: 'Positive',
-          percentage: Math.round((positives / total) * 100),
-        }
-      } else if (negatives > positives) {
-        sentiment.value = {
-          label: 'Negative',
-          percentage: Math.round((negatives / total) * 100),
-        }
-      } else {
-        sentiment.value = { label: 'Mixed', percentage: null }
-      }
+      sentiment.value = { label: 'Mixed', percentage: null }
     }
   })
 })

@@ -48,6 +48,7 @@
               <option value="oldest">Sort by Oldest</option>
               <option value="positive">Show Positive Reviews</option>
               <option value="negative">Show Negative Reviews</option>
+              <option value="mixed">Show Mixed Reviews</option>
             </select>
           </div>
         </div>
@@ -64,14 +65,20 @@
                   {{ review.movieTitle }}
                 </div>
                 <span
-                  class="inline-block px-4 py-1 rounded-full text-sm font-bold uppercase tracking-wide animate-pulse transition-shadow duration-300 ease-in-out"
-                  :class="
+                  class="inline-block px-4 py-1 rounded-full text-sm font-bold uppercase tracking-wide transition-shadow duration-300 ease-in-out text-center min-w-[140px]"
+                  :class="[
                     review.sentiment === 'positive'
                       ? 'bg-green-100 text-green-800 shadow-[0_0_15px_4px_rgba(74,222,128,0.5)]'
-                      : 'bg-red-100 text-red-800 shadow-[0_0_15px_4px_rgba(248,113,113,0.5)]'
-                  "
+                      : review.sentiment === 'negative'
+                        ? 'bg-red-100 text-red-800 shadow-[0_0_15px_4px_rgba(248,113,113,0.5)]'
+                        : 'bg-yellow-100 text-yellow-800 shadow-[0_0_15px_4px_rgba(234,179,8,0.5)]',
+                  ]"
+                  :title="`This is how our AI interpreted the review sentiment with ${review.confidence || 100}% confidence.`"
                 >
                   {{ review.sentiment.toUpperCase() }}
+                  <template v-if="review.confidence !== undefined && review.confidence !== null">
+                    ({{ review.confidence }}%)
+                  </template>
                 </span>
               </div>
 
@@ -408,6 +415,8 @@ const filteredReviews = computed(() => {
     return sorted.filter((r) => r.sentiment === 'positive')
   } else if (filterOption.value === 'negative') {
     return sorted.filter((r) => r.sentiment === 'negative')
+  } else if (filterOption.value === 'mixed') {
+    return sorted.filter((r) => r.sentiment === 'mixed')
   } else if (filterOption.value === 'oldest') {
     return sorted.sort((a, b) => a.createdAt - b.createdAt)
   } else {
