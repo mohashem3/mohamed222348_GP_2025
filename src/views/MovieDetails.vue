@@ -146,11 +146,46 @@
             <p class="text-[11px] text-gray-500 truncate italic">
               {{ actor.character || actor.job }}
             </p>
+
+            <!-- 🌍 Avg Rating (Stars) -->
+            <div
+              class="flex items-center justify-center gap-[2px] mt-3 mb-1"
+              :title="`Community rating for this movie: ${averageRatings[actor.id] || 0}/5`"
+            >
+              <template v-for="n in 5" :key="'avg-' + n">
+                <svg
+                  class="w-5 h-5"
+                  :class="n <= averageRatings[actor.id] ? 'text-yellow-400' : 'text-gray-300'"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 .587l3.668 7.568L24 9.423l-6 5.858L19.335 24
+         12 20.077 4.665 24 6 15.281 0 9.423l8.332-1.268z"
+                  />
+                </svg>
+              </template>
+            </div>
+
+            <!-- 👤 Your Rating (Dots) -->
+            <div
+              class="flex items-center justify-center gap-[6px] mt-3"
+              :title="`Your rating: ${castRatings[actor.id] || 0}/5`"
+            >
+              <template v-for="n in 5" :key="'user-' + n">
+                <div
+                  class="w-2.5 h-2.5 rounded-full transition"
+                  :class="n <= castRatings[actor.id] ? 'bg-indigo-500' : 'bg-gray-300'"
+                  @click="rateCastMember(actor, n)"
+                ></div>
+              </template>
+            </div>
           </div>
         </swiper-slide>
       </swiper>
     </div>
   </div>
+
   <!-- Streaming Providers Section -->
   <div v-if="providers.length" class="bg-gray-100 py-12 mt-20 mb-10 shadow-inner">
     <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Available On</h2>
@@ -226,13 +261,18 @@ import { Navigation } from 'swiper/modules'
 import ReviewSection from '@/components/ReviewSection.vue'
 import RatingChart from '@/components/charts/RatingChart.vue'
 import { listenToReviews } from '@/firebase/reviewService'
+import {
+  submitCastRating,
+  getCastRating,
+  getAllCastRatingsForMovie,
+} from '@/firebase/castRatingService'
 
 // import { getReviewsForMovie } from '@/firebase/reviewService'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Pie } from 'vue-chartjs'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
-
+const castRatings = ref({})
 const route = useRoute()
 const movieId = route.params.id
 const movie = ref(null)
@@ -240,6 +280,58 @@ const cast = ref([])
 const trailerUrl = ref(null)
 const sentiment = ref(null)
 const starRating = ref(0)
+const averageRatings = ref({})
+
+const fetchCastRatings = async () => {
+  const auth = getAuth()
+  const user = auth.currentUser
+  if (!user) return
+
+  const myRatings = {}
+  const avgRatings = {}
+
+  for (const member of cast.value) {
+    const castId = member.id
+
+    // ✅ Personal rating
+    const personal = await getCastRating(user.uid, movieId, castId)
+    if (personal !== null) {
+      myRatings[castId] = personal
+    }
+
+    // ✅ Global average rating
+    const allRatings = await getAllCastRatingsForMovie(castId, movieId)
+    const avg = allRatings.length
+      ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
+      : 0
+    avgRatings[castId] = Math.round(avg)
+  }
+
+  castRatings.value = myRatings
+  averageRatings.value = avgRatings
+}
+const rateCastMember = async (member, rating) => {
+  const auth = getAuth()
+  const user = auth.currentUser
+  if (!user) return alert('Please log in to rate.')
+
+  await submitCastRating(
+    user.uid,
+    movieId,
+    member.id,
+    member.name,
+    member.character || member.job || 'Unknown',
+    rating,
+  )
+
+  // ✅ Update user's own rating instantly
+  castRatings.value[member.id] = rating
+
+  // ✅ Re-fetch average rating instantly
+  const allRatings = await getAllCastRatingsForMovie(member.id, movieId)
+  const avg = allRatings.length ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length : 0
+  averageRatings.value[member.id] = Math.round(avg)
+}
 
 // ✅ Initialize with all 3 sentiment types
 const pieChartData = ref({
@@ -426,6 +518,7 @@ onMounted(async () => {
   await fetchMovieDetails()
   await checkFavorite()
   await fetchProviders()
+  await fetchCastRatings()
   // 🔁 Real-time chart updates
   // 🔁 Real-time sentiment and rating updates
   listenToReviews(movieId, (reviews) => {
