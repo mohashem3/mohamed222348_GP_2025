@@ -1,8 +1,18 @@
 <template>
   <div class="movie-view bg-gray-100 min-h-screen p-8">
     <div class="max-w-7xl mx-auto">
-      <!-- Title -->
-      <h1 class="text-2xl font-bold text-center mb-6">Movies</h1>
+      <h1 class="text-2xl font-bold text-center mb-6">
+        <template v-if="$route.query.title"> Results for: "{{ $route.query.title }}" </template>
+        <template v-else-if="$route.query.genre"> Genre: {{ $route.query.genre }} </template>
+        <template v-else-if="$route.query.director">
+          Director: {{ $route.query.director }}
+        </template>
+        <template v-else-if="$route.query.actor && $route.query.name">
+          Actor: {{ $route.query.name }}
+        </template>
+        <template v-else-if="$route.query.castName"> Cast: {{ $route.query.castName }} </template>
+        <template v-else> Movies </template>
+      </h1>
 
       <!-- Loading/Error -->
       <p v-if="loading" class="text-center text-gray-500">Loading movies...</p>
@@ -218,6 +228,15 @@ export default {
         }
       },
     },
+    '$route.query.castId': {
+      immediate: true,
+      handler(newCastId) {
+        if (newCastId) {
+          this.searchByActor(newCastId)
+        }
+      },
+    },
+
     '$route.query.genre': {
       immediate: true,
       handler(newGenre) {

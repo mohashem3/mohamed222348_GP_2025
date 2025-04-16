@@ -170,3 +170,27 @@ export const searchMoviesByGenre = async (query) => {
     return []
   }
 }
+
+// ✅ NEW: Fetch all movies (cast + crew) for a person by personId
+export const getAllCreditsByPersonId = async (personId) => {
+  try {
+    const res = await axios.get(`${BASE_URL}/person/${personId}/movie_credits?api_key=${API_KEY}`)
+    const castMovies = res.data.cast || []
+    const crewMovies = res.data.crew || []
+    return { cast: castMovies, crew: crewMovies }
+  } catch (err) {
+    console.error('Error fetching person credits:', err)
+    return { cast: [], crew: [] }
+  }
+}
+
+// ✅ Get person details by ID (to get profile_path)
+export const getPersonDetailsById = async (personId) => {
+  try {
+    const res = await axios.get(`${BASE_URL}/person/${personId}?api_key=${API_KEY}`)
+    return res.data
+  } catch (err) {
+    console.error('Error fetching person details:', err)
+    throw err
+  }
+}

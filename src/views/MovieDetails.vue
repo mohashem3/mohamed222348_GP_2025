@@ -132,7 +132,9 @@
         class="pb-4"
       >
         <swiper-slide v-for="actor in cast" :key="actor.id">
-          <div class="flex flex-col items-center text-center bg-white rounded-lg p-3 shadow-sm">
+          <div
+            class="flex flex-col items-center text-center bg-white rounded-lg p-3 shadow-sm w-[150px] h-[320px] mx-auto"
+          >
             <img
               :src="
                 actor.profile_path
@@ -147,10 +149,10 @@
               {{ actor.character || actor.job }}
             </p>
 
-            <!-- 🌍 Avg Rating (Stars) -->
+            <!-- 🌍 Avg Rating -->
             <div
-              class="flex items-center justify-center gap-[2px] mt-3 mb-1"
-              :title="`Community rating for this movie: ${averageRatings[actor.id] || 0}/5`"
+              class="flex items-center justify-center gap-[2px] mt-3"
+              :title="`Community rating: ${averageRatings[actor.id] || 0}/5`"
             >
               <template v-for="n in 5" :key="'avg-' + n">
                 <svg
@@ -161,24 +163,51 @@
                 >
                   <path
                     d="M12 .587l3.668 7.568L24 9.423l-6 5.858L19.335 24
-         12 20.077 4.665 24 6 15.281 0 9.423l8.332-1.268z"
+                  12 20.077 4.665 24 6 15.281 0 9.423l8.332-1.268z"
                   />
                 </svg>
               </template>
             </div>
 
-            <!-- 👤 Your Rating (Dots) -->
-            <div
-              class="flex items-center justify-center gap-[6px] mt-3"
-              :title="`Your rating: ${castRatings[actor.id] || 0}/5`"
-            >
-              <template v-for="n in 5" :key="'user-' + n">
-                <div
-                  class="w-2.5 h-2.5 rounded-full transition"
-                  :class="n <= castRatings[actor.id] ? 'bg-indigo-500' : 'bg-gray-300'"
-                  @click="rateCastMember(actor, n)"
-                ></div>
-              </template>
+            <!-- 👤 Your Rating Section -->
+            <div class="mt-3">
+              <div
+                v-if="showRatingPanel[actor.id] || castRatings[actor.id]"
+                class="flex items-center justify-center gap-[6px] relative"
+                :title="`Remove Rating!`"
+              >
+                <template v-for="n in 5" :key="'user-' + n">
+                  <div
+                    class="w-2.5 h-2.5 rounded-full transition cursor-pointer"
+                    :class="n <= castRatings[actor.id] ? 'bg-indigo-500' : 'bg-gray-300'"
+                    @click="rateCastMember(actor, n)"
+                  ></div>
+                </template>
+
+                <!-- 🗑 Trash Icon -->
+                <svg
+                  v-if="castRatings[actor.id]"
+                  @click="removeCastRating(actor)"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-3.5 h-3.5 ml-2 text-red-400 hover:text-red-500 cursor-pointer"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  title="Delete rating"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+
+              <!-- ➕ Add Rating Button -->
+              <button
+                v-else
+                @click="showRatingPanel[actor.id] = true"
+                class="mt-3 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-xs font-semibold px-4 py-[5px] rounded-full border border-indigo-100 shadow-sm transition"
+              >
+                Add Rating
+              </button>
             </div>
           </div>
         </swiper-slide>
@@ -248,7 +277,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { getAuth } from 'firebase/auth'
@@ -266,80 +295,114 @@ import {
   getCastRating,
   getAllCastRatingsForMovie,
 } from '@/firebase/castRatingService'
-
-// import { getReviewsForMovie } from '@/firebase/reviewService'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Pie } from 'vue-chartjs'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
-const castRatings = ref({})
+
 const route = useRoute()
 const movieId = route.params.id
 const movie = ref(null)
 const cast = ref([])
 const trailerUrl = ref(null)
 const sentiment = ref(null)
+
+const castRatings = ref({})
 const starRating = ref(0)
 const averageRatings = ref({})
 
+const showRatingPanel = ref({})
+
 const fetchCastRatings = async () => {
+  console.log('⏳ Fetching cast ratings...')
+  console.log('👀 cast.value at fetch start:', cast.value)
+
   const auth = getAuth()
   const user = auth.currentUser
-  if (!user) return
+  if (!user) {
+    console.warn('⛔ User not logged in, skipping ratings fetch')
+    return
+  }
 
-  const myRatings = {}
+  const personalRatings = {}
   const avgRatings = {}
 
   for (const member of cast.value) {
     const castId = member.id
 
-    // ✅ Personal rating
-    const personal = await getCastRating(user.uid, movieId, castId)
-    if (personal !== null) {
-      myRatings[castId] = personal
-    }
+    try {
+      const personal = await getCastRating(user.uid, movieId, castId)
+      console.log(`⭐ Personal rating for castId ${castId}:`, personal)
 
-    // ✅ Global average rating
-    const allRatings = await getAllCastRatingsForMovie(castId, movieId)
-    const avg = allRatings.length
-      ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
-      : 0
-    avgRatings[castId] = Math.round(avg)
+      if (personal !== null) {
+        personalRatings[castId] = personal
+        showRatingPanel.value[castId] = true // ✅ auto-show rating panel if rated
+      } else {
+        showRatingPanel.value[castId] = false // ✅ hide if not rated
+      }
+
+      const allRatings = await getAllCastRatingsForMovie(castId, movieId)
+      const avg = allRatings.length
+        ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
+        : 0
+      avgRatings[castId] = Math.round(avg)
+    } catch (err) {
+      console.error(`❌ Error fetching rating for castId ${castId}:`, err)
+    }
   }
 
-  castRatings.value = myRatings
+  castRatings.value = personalRatings
   averageRatings.value = avgRatings
 }
+
 const rateCastMember = async (member, rating) => {
   const auth = getAuth()
   const user = auth.currentUser
   if (!user) return alert('Please log in to rate.')
 
-  await submitCastRating(
-    user.uid,
-    movieId,
-    member.id,
-    member.name,
-    member.character || member.job || 'Unknown',
-    rating,
-  )
+  const role = member.known_for_department === 'Acting' ? 'Actor' : member.job || 'Unknown'
 
-  // ✅ Update user's own rating instantly
-  castRatings.value[member.id] = rating
+  try {
+    await submitCastRating(user.uid, movieId, member.id, member.name, role, rating, member.id)
 
-  // ✅ Re-fetch average rating instantly
-  const allRatings = await getAllCastRatingsForMovie(member.id, movieId)
-  const avg = allRatings.length ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length : 0
-  averageRatings.value[member.id] = Math.round(avg)
+    castRatings.value[member.id] = rating
+
+    await new Promise((res) => setTimeout(res, 300))
+
+    const allRatings = await getAllCastRatingsForMovie(member.id, movieId)
+    const avg = allRatings.length
+      ? allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length
+      : 0
+    averageRatings.value[member.id] = Math.round(avg)
+  } catch (err) {
+    console.error(`❌ Failed to rate ${member.name}:`, err)
+    alert('Something went wrong while saving your rating.')
+  }
 }
 
-// ✅ Initialize with all 3 sentiment types
+import { deleteCastRating } from '@/firebase/castRatingService'
+
+const removeCastRating = async (member) => {
+  const auth = getAuth()
+  const user = auth.currentUser
+  if (!user) return
+
+  try {
+    await deleteCastRating(user.uid, movieId, member.id)
+    castRatings.value[member.id] = null
+    averageRatings.value[member.id] = 0
+    showRatingPanel.value[member.id] = false
+  } catch (err) {
+    console.error('❌ Failed to delete rating:', err)
+  }
+}
+
 const pieChartData = ref({
   labels: ['Positive', 'Negative', 'Mixed'],
   datasets: [
     {
-      backgroundColor: ['#10B981', '#EF4444', '#FACC15'], // green, red, yellow
-      data: [0, 0, 0], // must match labels length!
+      backgroundColor: ['#10B981', '#EF4444', '#FACC15'],
+      data: [0, 0, 0],
     },
   ],
 })
@@ -398,6 +461,8 @@ const fetchMovieDetails = async () => {
       fullCast.unshift({ ...director, character: 'Director' })
     }
     cast.value = fullCast
+
+    await fetchCastRatings()
 
     const videoRes = await axios.get(
       `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${API_KEY}`,
@@ -518,9 +583,6 @@ onMounted(async () => {
   await fetchMovieDetails()
   await checkFavorite()
   await fetchProviders()
-  await fetchCastRatings()
-  // 🔁 Real-time chart updates
-  // 🔁 Real-time sentiment and rating updates
   listenToReviews(movieId, (reviews) => {
     const total = reviews.length
     const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
@@ -533,21 +595,18 @@ onMounted(async () => {
     const negativePercent = (negativeReviews / total) * 100
     const mixedPercent = (mixedReviews / total) * 100
 
-    // ✅ Update Pie Chart
     pieChartData.value = {
       labels: ['Positive', 'Negative', 'Mixed'],
       datasets: [
         {
-          backgroundColor: ['#10B981', '#EF4444', '#FACC15'], // Green, Red, Yellow
+          backgroundColor: ['#10B981', '#EF4444', '#FACC15'],
           data: [positiveReviews, negativeReviews, mixedReviews],
         },
       ],
     }
 
-    // ✅ Star Rating from user input
     starRating.value = total > 0 ? Math.round(totalRating / total) : 0
 
-    // ✅ Sentiment Badge Logic
     if (total === 0) {
       sentiment.value = { label: 'No Reviews', percentage: null }
     } else if (positivePercent > 50) {
@@ -560,5 +619,11 @@ onMounted(async () => {
       sentiment.value = { label: 'Mixed', percentage: null }
     }
   })
+})
+
+watch(cast, async (newCast) => {
+  if (newCast.length) {
+    await fetchCastRatings()
+  }
 })
 </script>
