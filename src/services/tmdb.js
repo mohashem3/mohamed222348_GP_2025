@@ -194,3 +194,70 @@ export const getPersonDetailsById = async (personId) => {
     throw err
   }
 }
+
+// Award Winning Movies
+const V4_ACCESS_TOKEN = import.meta.env.VITE_TMDB_V4_TOKEN
+
+export const getAwardWinningMovies = async () => {
+  try {
+    const response = await fetch('https://api.themoviedb.org/4/list/28', {
+      headers: {
+        Authorization: `Bearer ${V4_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json;charset=utf-8',
+      },
+    })
+    const data = await response.json()
+    return data.results // This gives you the movie array
+  } catch (err) {
+    console.error('Error fetching award-winning movies:', err)
+    return []
+  }
+}
+
+// topRevenueIds.js or inside tmdb.js
+export const TOP_REVENUE_MOVIE_IDS = [
+  299534, 597, 19995, 447365, 155, 181812, 76341, 424, 102382, 122917, 166428, 671, 278, 680, 122,
+  24428, 438631, 315635, 118340, 27205, 157336, 634649, 497698, 603, 497, 1891, 603692, 181808, 120,
+  122906,
+]
+
+export async function fetchTopBoxOfficeMovies() {
+  const requests = TOP_REVENUE_MOVIE_IDS.map(async (id) => {
+    const res = await axios.get(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`)
+    return res.data
+  })
+
+  const movies = await Promise.all(requests)
+
+  return movies.filter((m) => m.revenue > 0).sort((a, b) => b.revenue - a.revenue) // safety sort
+}
+
+// Top Box Office
+// export async function fetchTopRevenueMovies(pages = 5) {
+//   let allMovies = []
+
+//   for (let i = 1; i <= pages; i++) {
+//     const res = await axios.get(
+//       `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&sort_by=popularity.desc&page=${i}`,
+//     )
+//     allMovies = allMovies.concat(res.data.results)
+//   }
+
+//   // Fetch revenue for each movie
+//   const withRevenue = await Promise.all(
+//     allMovies.slice(0, 100).map(async (movie) => {
+//       const detailRes = await axios.get(
+//         `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${API_KEY}`,
+//       )
+//       return {
+//         ...movie,
+//         revenue: detailRes.data.revenue || 0,
+//       }
+//     }),
+//   )
+
+//   return withRevenue
+//     .filter((m) => m.revenue > 0)
+//     .sort((a, b) => b.revenue - a.revenue)
+//     .slice(0, 30)
+// }

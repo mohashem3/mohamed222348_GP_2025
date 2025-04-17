@@ -4,7 +4,25 @@
   >
     <!-- Poster -->
     <div class="relative">
-      <img :src="poster" :alt="title" class="w-full h-72 object-cover" />
+      <!-- 🏅 Rank Badge -->
+      <div
+        v-if="rank"
+        class="absolute top-2 left-2 bg-yellow-400 text-xs font-bold text-yellow-900 px-2 py-[2px] rounded-full shadow backdrop-blur-md"
+        :title="`#${rank} Highest Grossing`"
+      >
+        #{{ rank }}
+      </div>
+
+      <router-link
+        :to="{ name: 'MovieDetails', params: { id: movieId }, query: { title } }"
+        class="block cursor-pointer"
+      >
+        <img
+          :src="poster"
+          :alt="title"
+          class="w-full h-72 object-cover hover:opacity-90 transition"
+        />
+      </router-link>
 
       <!-- Sentiment Badge -->
       <div
@@ -33,7 +51,7 @@
       <div
         class="absolute top-2 right-2 cursor-pointer"
         :title="isFavorite ? 'Remove from Watchlist' : 'Add to Watchlist'"
-        @click="toggleFavorite"
+        @click.stop="toggleFavorite"
       >
         <svg
           :class="[
@@ -46,13 +64,22 @@
           <path
             stroke-width="1.5"
             d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
-            2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81
-            4.5 2.09C13.09 3.81 14.76 3 16.5 3
-            19.58 3 22 5.42 22 8.5c0 3.78-3.4
-            6.86-8.55 11.54L12 21.35z"
+        2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81
+        4.5 2.09C13.09 3.81 14.76 3 16.5 3
+        19.58 3 22 5.42 22 8.5c0 3.78-3.4
+        6.86-8.55 11.54L12 21.35z"
           />
         </svg>
       </div>
+    </div>
+
+    <!-- 💵 Revenue Badge (Only for Box Office Slider) -->
+    <div
+      v-if="revenue"
+      class="text-xs font-semibold text-green-800 bg-green-100 px-2 py-[2px] rounded-full inline-block mx-auto mt-2"
+      :title="'Box Office Revenue: $' + revenue.toLocaleString()"
+    >
+      ${{ revenue.toLocaleString() }}
     </div>
 
     <!-- Info -->
@@ -82,7 +109,7 @@
       <!-- Add Review + Review Count + Watchlist -->
       <div class="flex justify-between items-center mt-4">
         <button
-          @click="handleReview"
+          @click.stop="handleReview"
           class="bg-gray-100 text-sm text-gray-800 font-medium px-4 py-2 rounded-full hover:bg-gray-200 transition"
         >
           Add Review
@@ -134,7 +161,9 @@ export default {
     poster: String,
     genre: Array,
     releaseDate: String,
-    matchedGenre: String, // ✅ New prop from MovieList.vue
+    matchedGenre: String,
+    revenue: Number,
+    rank: Number,
   },
   data() {
     return {
@@ -149,9 +178,21 @@ export default {
       if (this.matchedGenre) {
         return this.matchedGenre.charAt(0).toUpperCase() + this.matchedGenre.slice(1)
       }
-      const id = this.genre?.[0]
-      return GENRE_MAP[id] || 'Unknown'
+
+      // 🎯 Support genre_ids (array of numbers)
+      if (Array.isArray(this.genre) && typeof this.genre[0] === 'number') {
+        const id = this.genre[0]
+        return GENRE_MAP[id] || 'Unknown'
+      }
+
+      // 🎯 Support genres (array of { id, name })
+      if (Array.isArray(this.genre) && typeof this.genre[0] === 'object') {
+        return this.genre[0].name || 'Unknown'
+      }
+
+      return 'Unknown'
     },
+
     releaseYear() {
       return this.releaseDate ? new Date(this.releaseDate).getFullYear() : null
     },

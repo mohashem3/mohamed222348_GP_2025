@@ -4,7 +4,8 @@ import HomeSlider from '@/components/HomeSlider.vue'
 import MovieSwiper from '@/components/MovieSwiper.vue'
 import GenreTags from '@/components/GenreTags.vue'
 import TopCastSlider from '@/components/TopCastSlider.vue'
-
+import AwardWinningSlider from '@/components/AwardWinningSlider.vue'
+import BoxOfficeSlider from '@/components/BoxOfficeSlider.vue'
 import { fetchPopularMovies } from '@/services/tmdb'
 import { getSentimentStats } from '@/firebase/reviewService'
 import { getTopRatedCastByRole } from '@/firebase/castRatingService'
@@ -45,7 +46,8 @@ onMounted(async () => {
 <template>
   <HomeSlider />
   <GenreTags />
-
+  <AwardWinningSlider />
+  <BoxOfficeSlider />
   <!-- ⭐ Cast Sliders -->
   <TopCastSlider title="Top Rated Actors" :castList="topActors" />
   <TopCastSlider title="Top Rated Directors" :castList="topDirectors" />

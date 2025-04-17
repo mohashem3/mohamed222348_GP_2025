@@ -174,7 +174,7 @@
               <div
                 v-if="showRatingPanel[actor.id] || castRatings[actor.id]"
                 class="flex items-center justify-center gap-[6px] relative"
-                :title="`Remove Rating!`"
+                :title="`My Rating`"
               >
                 <template v-for="n in 5" :key="'user-' + n">
                   <div
