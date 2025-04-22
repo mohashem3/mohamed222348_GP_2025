@@ -48,7 +48,7 @@
               <option value="oldest">Sort by Oldest</option>
               <option value="positive">Show Positive Reviews</option>
               <option value="negative">Show Negative Reviews</option>
-              <option value="mixed">Show Mixed Reviews</option>
+              <option value="neutral">Show Neutral Reviews</option>
             </select>
           </div>
         </div>
@@ -415,8 +415,8 @@ const filteredReviews = computed(() => {
     return sorted.filter((r) => r.sentiment === 'positive')
   } else if (filterOption.value === 'negative') {
     return sorted.filter((r) => r.sentiment === 'negative')
-  } else if (filterOption.value === 'mixed') {
-    return sorted.filter((r) => r.sentiment === 'mixed')
+  } else if (filterOption.value === 'neutral') {
+    return sorted.filter((r) => r.sentiment === 'neutral')
   } else if (filterOption.value === 'oldest') {
     return sorted.sort((a, b) => a.createdAt - b.createdAt)
   } else {

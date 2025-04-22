@@ -164,11 +164,11 @@ const loadPieChartData = async (movieId, field) => {
     const reviews = await getReviewsForMovie(String(movieId))
     const positive = reviews.filter((r) => r.sentiment === 'positive').length
     const negative = reviews.filter((r) => r.sentiment === 'negative').length
-    const mixed = reviews.filter((r) => r.sentiment === 'mixed').length
+    const neutral = reviews.filter((r) => r.sentiment === 'neutral').length
 
     const data = {
-      labels: ['Positive', 'Negative', 'Mixed'],
-      values: [positive, negative, mixed],
+      labels: ['Positive', 'Negative', 'Neutral'],
+      values: [positive, negative, neutral],
       colors: ['#10B981', '#EF4444', '#FACC15'], // green, red, yellow
     }
 

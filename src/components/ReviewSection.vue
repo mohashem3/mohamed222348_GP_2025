@@ -72,7 +72,7 @@
         <option value="oldest">Sort by Oldest</option>
         <option value="positive">Positive Reviews</option>
         <option value="negative">Negative Reviews</option>
-        <option value="mixed">Mixed Reviews</option>
+        <option value="neutral">Neutral Reviews</option>
         <option value="mine">My Reviews</option>
       </select>
     </div>
@@ -286,8 +286,8 @@ const filteredReviews = computed(() => {
     case 'negative':
       result = result.filter((r) => r.sentiment === 'negative')
       break
-    case 'mixed':
-      result = result.filter((r) => r.sentiment === 'mixed')
+    case 'neutral':
+      result = result.filter((r) => r.sentiment === 'neutral')
       break
     case 'oldest':
       result = result.sort((a, b) => a.createdAt - b.createdAt)
@@ -349,9 +349,9 @@ const handleSubmitReview = async () => {
     let { sentiment = 'neutral', confidence = 0 } = await response.json()
     confidence = Math.round(confidence) // Round for readability
 
-    // Inject "mixed" sentiment if confidence is low
+    // Inject "neutral" sentiment if confidence is low
     if (confidence >= 45 && confidence <= 55) {
-      sentiment = 'mixed'
+      sentiment = 'neutral'
     }
 
     const userDoc = await getDoc(doc(db, 'users', user.uid))

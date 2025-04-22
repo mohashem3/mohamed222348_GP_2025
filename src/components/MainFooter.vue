@@ -42,7 +42,7 @@
       </div>
 
       <div class="mt-10 border-t border-gray-700 pt-4 text-center text-sm text-gray-500">
-        &copy; 2025 SentimentCinema. Built with ❤️ by Students.
+        &copy; 2025 SentimentCinema. Built with ❤️ by Mohamed Hashem.
       </div>
     </div>
   </footer>

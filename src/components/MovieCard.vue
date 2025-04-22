@@ -33,7 +33,7 @@
             ? 'bg-green-500 shadow-[0_0_18px_rgba(34,197,94,0.8)]'
             : sentiment.label === 'Negative'
               ? 'bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.8)]'
-              : sentiment.label === 'Mixed'
+              : sentiment.label === 'Neutral'
                 ? 'bg-yellow-400 text-yellow-900 shadow-[0_0_18px_rgba(234,179,8,0.8)]'
                 : 'bg-gray-400',
         ]"
@@ -211,21 +211,21 @@ export default {
 
       const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
       const negativeReviews = reviews.filter((r) => r.sentiment === 'negative').length
-      const mixedReviews = reviews.filter((r) => r.sentiment === 'mixed').length
+      const NeutralReviews = reviews.filter((r) => r.sentiment === 'Neutral').length
 
       const positivePercent = (positiveReviews / total) * 100
       const negativePercent = (negativeReviews / total) * 100
-      const mixedPercent = (mixedReviews / total) * 100
+      const NeutralPercent = (NeutralReviews / total) * 100
 
       // 🎯 Determine dominant sentiment
       if (positivePercent > 50) {
         this.sentiment = { label: 'Positive', percentage: Math.round(positivePercent) }
       } else if (negativePercent > 50) {
         this.sentiment = { label: 'Negative', percentage: Math.round(negativePercent) }
-      } else if (mixedPercent > 50) {
-        this.sentiment = { label: 'Mixed', percentage: Math.round(mixedPercent) }
+      } else if (NeutralPercent > 50) {
+        this.sentiment = { label: 'Neutral', percentage: Math.round(NeutralPercent) }
       } else {
-        this.sentiment = { label: 'Mixed', percentage: null }
+        this.sentiment = { label: 'Neutral', percentage: null }
       }
 
       // Set star rating based on actual user ratings

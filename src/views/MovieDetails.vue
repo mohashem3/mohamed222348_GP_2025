@@ -18,7 +18,7 @@
                 ? 'bg-green-500 shadow-[0_0_18px_rgba(34,197,94,0.8)]'
                 : sentiment.label === 'Negative'
                   ? 'bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.8)]'
-                  : sentiment.label === 'Mixed'
+                  : sentiment.label === 'Neutral'
                     ? 'bg-yellow-400 text-yellow-900 shadow-[0_0_18px_rgba(234,179,8,0.8)]'
                     : 'bg-gray-400',
             ]"
@@ -274,6 +274,7 @@
 
   <!-- Review Section -->
   <ReviewSection :movieId="movieId" />
+  <RecommendationSlider v-if="movie" :genreId="movie.genres?.[0]?.id" :currentMovieId="movie.id" />
 </template>
 
 <script setup>
@@ -297,6 +298,7 @@ import {
 } from '@/firebase/castRatingService'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Pie } from 'vue-chartjs'
+import RecommendationSlider from '@/components/RecommendationSlider.vue'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -398,7 +400,7 @@ const removeCastRating = async (member) => {
 }
 
 const pieChartData = ref({
-  labels: ['Positive', 'Negative', 'Mixed'],
+  labels: ['Positive', 'Negative', 'Neutral'],
   datasets: [
     {
       backgroundColor: ['#10B981', '#EF4444', '#FACC15'],
@@ -587,20 +589,20 @@ onMounted(async () => {
     const total = reviews.length
     const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
     const negativeReviews = reviews.filter((r) => r.sentiment === 'negative').length
-    const mixedReviews = reviews.filter((r) => r.sentiment === 'mixed').length
+    const neutralReviews = reviews.filter((r) => r.sentiment === 'neutral').length
 
     const totalRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0)
 
     const positivePercent = (positiveReviews / total) * 100
     const negativePercent = (negativeReviews / total) * 100
-    const mixedPercent = (mixedReviews / total) * 100
+    const neutralPercent = (neutralReviews / total) * 100
 
     pieChartData.value = {
-      labels: ['Positive', 'Negative', 'Mixed'],
+      labels: ['Positive', 'Negative', 'Neutral'],
       datasets: [
         {
           backgroundColor: ['#10B981', '#EF4444', '#FACC15'],
-          data: [positiveReviews, negativeReviews, mixedReviews],
+          data: [positiveReviews, negativeReviews, neutralReviews],
         },
       ],
     }
@@ -613,10 +615,10 @@ onMounted(async () => {
       sentiment.value = { label: 'Positive', percentage: Math.round(positivePercent) }
     } else if (negativePercent > 50) {
       sentiment.value = { label: 'Negative', percentage: Math.round(negativePercent) }
-    } else if (mixedPercent > 50) {
-      sentiment.value = { label: 'Mixed', percentage: Math.round(mixedPercent) }
+    } else if (neutralPercent > 50) {
+      sentiment.value = { label: 'Neutral', percentage: Math.round(neutralPercent) }
     } else {
-      sentiment.value = { label: 'Mixed', percentage: null }
+      sentiment.value = { label: 'Neutral', percentage: null }
     }
   })
 })
