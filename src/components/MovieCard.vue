@@ -265,6 +265,7 @@ export default {
       if (!user) return alert('You need to be logged in.')
 
       const favRef = doc(db, 'users', user.uid, 'watchlist', String(this.movieId))
+
       if (this.isFavorite) {
         await deleteDoc(favRef)
         this.isFavorite = false
@@ -274,9 +275,9 @@ export default {
           movieId: this.movieId,
           title: this.title,
           poster: this.poster,
-          genre: this.genre,
           releaseDate: this.releaseDate,
           addedAt: new Date(),
+          primaryGenre: this.genreName, // ✅ clean 1 genre only
         })
 
         this.isFavorite = true

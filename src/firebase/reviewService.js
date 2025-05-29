@@ -14,6 +14,7 @@ import {
   deleteDoc,
   orderBy,
 } from 'firebase/firestore'
+import { getPrimaryGenre } from '@/services/tmdb'
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY
 
@@ -32,6 +33,8 @@ export const submitReview = async (
     const userSnap = await getDoc(userRef)
     const userName = userSnap.exists() ? userSnap.data().name || 'Anonymous' : 'Anonymous'
 
+    const primaryGenreId = await getPrimaryGenre(movieId)
+
     const reviewRef = collection(db, 'reviews')
     await addDoc(reviewRef, {
       userId,
@@ -41,11 +44,12 @@ export const submitReview = async (
       confidence,
       rating,
       userName,
+      genre_ids: [primaryGenreId], // ✅ Only 1 genre stored
       createdAt: serverTimestamp(),
       createdAtMillis: Date.now(),
     })
 
-    console.log('✅ Review submitted successfully!')
+    console.log('✅ Review submitted successfully with genre_ids:', [primaryGenreId])
     return true
   } catch (error) {
     console.error('Error submitting review:', error)
@@ -136,7 +140,7 @@ export const getReviewsByUser = async (userId) => {
   }
 }
 
-// ✅ UPDATE an existing review
+// UPDATE an existing review
 export const updateReview = async (reviewId, updatedFields) => {
   try {
     const reviewRef = doc(db, 'reviews', reviewId)
@@ -152,7 +156,7 @@ export const updateReview = async (reviewId, updatedFields) => {
   }
 }
 
-// ✅ Get sentiment stats
+// Get sentiment stats
 export const getSentimentStats = async (movieId) => {
   try {
     const reviews = await getReviewsForMovie(movieId)
@@ -165,7 +169,7 @@ export const getSentimentStats = async (movieId) => {
   }
 }
 
-// 🔁 LISTEN to real-time review updates
+// LISTEN to real-time review updates
 export const listenToReviews = (movieId, callback) => {
   const q = query(
     collection(db, 'reviews'),
@@ -187,7 +191,7 @@ export const listenToReviews = (movieId, callback) => {
   })
 }
 
-// ❌ DELETE a review
+// DELETE a review
 export const deleteReview = async (reviewId) => {
   try {
     const reviewRef = doc(db, 'reviews', reviewId)
@@ -197,5 +201,20 @@ export const deleteReview = async (reviewId) => {
   } catch (error) {
     console.error('Error deleting review:', error)
     return false
+  }
+}
+
+// GET review texts only (for summarization)
+export const getReviewTextsByMovie = async (movieId) => {
+  try {
+    const q = query(collection(db, 'reviews'), where('movieId', '==', String(movieId)))
+    const querySnapshot = await getDocs(q)
+
+    return querySnapshot.docs
+      .map((doc) => doc.data().reviewText)
+      .filter((text) => typeof text === 'string' && text.trim() !== '')
+  } catch (error) {
+    console.error('Error fetching review texts:', error)
+    return []
   }
 }

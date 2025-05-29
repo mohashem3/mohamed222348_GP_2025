@@ -28,6 +28,25 @@
               Personal Info
             </button>
           </li>
+          <li>
+            <button @click="activeTab = 'recommendations'" :class="tabClasses('recommendations')">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.75 17L16.5 12l-6.75-5v10z"
+                />
+              </svg>
+              Recommendations
+            </button>
+          </li>
         </ul>
       </aside>
 
@@ -208,7 +227,6 @@
         </div>
 
         <!-- PERSONAL INFO TAB -->
-
         <div
           v-if="activeTab === 'info'"
           class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-2xl px-10 py-12 space-y-10"
@@ -305,6 +323,34 @@
             </div>
           </div>
         </div>
+        <!-- 💡 Recommendations Tab -->
+        <div v-if="activeTab === 'recommendations'" class="px-4 sm:px-6 md:px-8 mt-6">
+          <div
+            class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-2xl shadow-md mb-6"
+          >
+            <h3 class="text-2xl font-bold mb-2">Your Personalized Movie Picks 🍿</h3>
+            <p class="text-sm md:text-base">
+              Based on your <span class="font-semibold">review history</span>, we found your
+              favorite genre is <span class="font-semibold underline">{{ favoriteGenreName }}</span
+              >. Here are some handpicked movies we think you'll love.
+            </p>
+          </div>
+
+          <div v-if="recommendedMovies.length">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+              <MovieCard
+                v-for="movie in recommendedMovies"
+                :key="movie.id"
+                :movie-id="movie.id"
+                :title="movie.title"
+                :poster="movie.poster_path"
+                :genre="movie.genre_ids"
+                :release-date="movie.release_date"
+              />
+            </div>
+          </div>
+          <p v-else class="text-gray-500">No recommendations available yet.</p>
+        </div>
       </section>
     </div>
   </div>
@@ -328,6 +374,7 @@ import MovieCard from '@/components/MovieCard.vue'
 import { clearWatchlist } from '../firebase/watchlistService'
 import Swal from 'sweetalert2'
 import { updateUserPassword, updateUserName } from '@/firebase/firebaseService'
+import { getMoviesByGenre, getGenreMap } from '@/services/tmdb'
 
 import { toRaw } from 'vue'
 console.log('raw currentUser:', toRaw(currentUser.value))
@@ -343,6 +390,10 @@ const editMode = reactive({
   password: false,
 })
 
+const favoriteGenreId = ref(null)
+const favoriteGenreName = ref('')
+const recommendedMovies = ref([])
+
 // Reviews State
 const allUserReviews = ref([])
 const currentPage = ref(1)
@@ -357,6 +408,48 @@ const avatarInitials = computed(() => {
 // Navigation
 const goToMovie = (movieId, title) => {
   router.push({ name: 'MovieDetails', params: { id: movieId }, query: { title } })
+}
+
+const detectFavoriteGenre = async () => {
+  const genreCount = {}
+  const genreMap = await getGenreMap() // { 28: 'Action', 12: 'Adventure', ... }
+
+  for (const review of allUserReviews.value) {
+    const genres = review.genre_ids
+    if (Array.isArray(genres)) {
+      for (const gid of genres) {
+        genreCount[gid] = (genreCount[gid] || 0) + 1
+      }
+    }
+  }
+
+  const sorted = Object.entries(genreCount).sort((a, b) => b[1] - a[1])
+  if (sorted.length > 0) {
+    const [topGenreId] = sorted[0]
+    favoriteGenreId.value = parseInt(topGenreId)
+
+    // Find genre name by reversing genreMap (ID → name)
+    const nameEntry = Object.entries(genreMap).find(
+      ([id]) => parseInt(id) === favoriteGenreId.value,
+    )
+    favoriteGenreName.value = nameEntry ? nameEntry[1] : 'Unknown'
+  }
+}
+
+const fetchRecommendedMovies = async () => {
+  if (!favoriteGenreName.value) return
+
+  try {
+    const movies = await getMoviesByGenre(favoriteGenreName.value)
+    const watchlistIds = new Set(watchlistMovies.value.map((m) => String(m.id)))
+    const reviewedIds = new Set(allUserReviews.value.map((r) => String(r.movieId)))
+
+    recommendedMovies.value = movies
+      .filter((movie) => !watchlistIds.has(String(movie.id)) && !reviewedIds.has(String(movie.id)))
+      .slice(0, 12)
+  } catch (err) {
+    console.error('Error fetching recommended movies:', err)
+  }
 }
 
 const handleClearWatchlist = async () => {
@@ -402,6 +495,9 @@ const activeTabTitle = computed(() => {
       return 'Your Watchlist'
     case 'info':
       return 'Your Personal Info'
+    case 'recommendations':
+      return 'Recommended for You'
+
     default:
       return ''
   }
@@ -541,6 +637,10 @@ onMounted(async () => {
     // Watchlist
     const snap = await getDocs(collection(db, 'users', currentUser.value.uid, 'watchlist'))
     watchlistMovies.value = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+
+    // New ➕
+    await detectFavoriteGenre()
+    await fetchRecommendedMovies()
   }
 })
 </script>

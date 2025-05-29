@@ -232,6 +232,65 @@ export async function fetchTopBoxOfficeMovies() {
   return movies.filter((m) => m.revenue > 0).sort((a, b) => b.revenue - a.revenue) // safety sort
 }
 
+// ✅ Fetch movies by genre name (supports multiple pages)
+export const getMoviesByGenre = async (genreName, totalPages = 3) => {
+  try {
+    const genreKey = genreName
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z]/gi, '')
+    const genreId = genreMap[genreKey]
+    if (!genreId) return []
+
+    let allResults = []
+
+    for (let page = 1; page <= totalPages; page++) {
+      const response = await axios.get(
+        `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=${genreId}&page=${page}`,
+      )
+      allResults.push(...(response.data?.results || []))
+    }
+
+    return allResults
+  } catch (error) {
+    console.error('Error fetching genre movies:', error)
+    return []
+  }
+}
+
+export const getPrimaryGenre = async (movieId) => {
+  try {
+    const res = await axios.get(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`)
+    const genres = res.data.genres || []
+    if (genres.length > 0) {
+      return genres[0].id // ✅ return only the first genre ID
+    }
+    return null
+  } catch (error) {
+    console.error(`Error fetching genre for movie ${movieId}:`, error)
+    return null
+  }
+}
+
+// ✅ Get TMDB Genre ID → Name map
+export const getGenreMap = async () => {
+  try {
+    const res = await axios.get(`https://api.themoviedb.org/3/genre/movie/list?api_key=${API_KEY}`)
+    const genres = res.data.genres || [] // Array of { id, name }
+
+    const genreMap = {}
+    genres.forEach((g) => {
+      genreMap[g.id] = g.name
+    })
+
+    return genreMap
+  } catch (err) {
+    console.error('Error fetching genre map:', err)
+    return {}
+  }
+}
+
 // Top Box Office
 // export async function fetchTopRevenueMovies(pages = 5) {
 //   let allMovies = []

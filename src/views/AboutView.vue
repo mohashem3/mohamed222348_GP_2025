@@ -35,7 +35,9 @@
     </div>
 
     <div class="max-w-4xl mx-auto mt-20 text-center">
-      <h2 class="text-2xl font-semibold text-gray-800 mb-4">👨‍💻 Built by Students. For Everyone.</h2>
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+        👨‍💻 Built by Mohamed Hashem. For Everyone.
+      </h2>
       <p class="text-gray-600 text-lg mb-6">
         SentimentCinema was created as a graduation project by a passionate student who love movies,
         tech, and meaningful data.

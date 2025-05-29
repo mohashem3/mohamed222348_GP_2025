@@ -78,3 +78,30 @@ export const clearWatchlist = async (userId) => {
     return false
   }
 }
+
+// 📊 Get most frequent genres in watchlist (based on primaryGenre)
+export const getTopGenresFromWatchlist = async (userId, topN = 3) => {
+  try {
+    const snapshot = await getDocs(collection(db, 'users', userId, 'watchlist'))
+    const genreCount = {}
+
+    snapshot.forEach((doc) => {
+      const data = doc.data()
+      const genre = data.primaryGenre
+      if (genre) {
+        genreCount[genre] = (genreCount[genre] || 0) + 1
+      }
+    })
+
+    // Sort genres by frequency
+    const sortedGenres = Object.entries(genreCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, topN)
+      .map(([genre]) => genre)
+
+    return sortedGenres
+  } catch (err) {
+    console.error('Error analyzing watchlist genres:', err)
+    return []
+  }
+}

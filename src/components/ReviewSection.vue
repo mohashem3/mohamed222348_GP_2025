@@ -77,6 +77,24 @@
       </select>
     </div>
 
+    <div class="my-6 p-4 rounded-lg bg-gray-50 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold text-gray-700">🧠 Summary of User Reviews</h3>
+        <button
+          @click="summarizeReviews"
+          :disabled="isSummarizing"
+          class="px-4 py-2 text-sm font-medium rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+        >
+          <span v-if="!isSummarizing">Summarize Reviews</span>
+          <span v-else class="animate-pulse">Summarizing...</span>
+        </button>
+      </div>
+
+      <p v-if="summaryResult" class="text-gray-600 whitespace-pre-line mt-2">
+        {{ summaryResult }}
+      </p>
+    </div>
+
     <!-- Review List -->
     <div v-if="reviews.length" class="space-y-10">
       <div
@@ -251,15 +269,37 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { getAuth } from 'firebase/auth'
-import { submitReview, updateReview, listenToReviews, deleteReview } from '@/firebase/reviewService'
+import {
+  submitReview,
+  updateReview,
+  listenToReviews,
+  deleteReview,
+  getReviewTextsByMovie,
+} from '@/firebase/reviewService'
 import Swal from 'sweetalert2'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/firebaseConfig'
-const SENTIMENT_API = import.meta.env.VITE_SENTIMENT_API
-
+const SENTIMENT_API = `${import.meta.env.VITE_API_URL}/predict`
+//const SUMMARIZE_API = `${import.meta.env.VITE_API_URL}/summarize`
 const props = defineProps({
   movieId: [String, Number],
 })
+
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY
+
+const fetchPrimaryGenre = async (movieId) => {
+  try {
+    const response = await fetch(
+      `https://api.themoviedb.org/3/movie/${movieId}?api_key=${TMDB_API_KEY}`,
+    )
+    const data = await response.json()
+    return Array.isArray(data.genres) && data.genres.length > 0 ? data.genres[0].id : null
+  } catch (err) {
+    console.error('Failed to fetch genre:', err)
+    return null
+  }
+}
+
 const filterOption = ref('newest') // default
 
 const reviewText = ref('')
@@ -275,6 +315,37 @@ let unsubscribe = null
 
 const reviewsPerPage = 5
 const currentPage = ref(1)
+
+const summaryResult = ref('')
+const isSummarizing = ref(false)
+
+const summarizeReviews = async () => {
+  isSummarizing.value = true
+  summaryResult.value = ''
+
+  try {
+    const reviewTexts = await getReviewTextsByMovie(props.movieId)
+
+    if (reviewTexts.length === 0) {
+      Swal.fire('No Reviews', 'There are no reviews to summarize.', 'info')
+      return
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/summarize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviews: reviewTexts }),
+    })
+
+    const { summary } = await response.json()
+    summaryResult.value = summary
+  } catch (error) {
+    console.error(error)
+    Swal.fire('Error', 'Failed to summarize reviews.', 'error')
+  } finally {
+    isSummarizing.value = false
+  }
+}
 
 const filteredReviews = computed(() => {
   let result = [...reviews.value]
@@ -357,6 +428,7 @@ const handleSubmitReview = async () => {
     const userDoc = await getDoc(doc(db, 'users', user.uid))
     const userData = userDoc.exists() ? userDoc.data() : {}
     const userName = userData.name || 'Anonymous'
+    const primaryGenreId = await fetchPrimaryGenre(props.movieId)
 
     await submitReview(
       user.uid,
@@ -364,8 +436,9 @@ const handleSubmitReview = async () => {
       reviewText.value,
       sentiment,
       selectedRating.value,
-      userName, // re-add this
+      userName,
       confidence,
+      primaryGenreId,
     )
 
     Swal.fire({
