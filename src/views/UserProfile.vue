@@ -325,6 +325,7 @@
         </div>
         <!-- 💡 Recommendations Tab -->
         <div v-if="activeTab === 'recommendations'" class="px-4 sm:px-6 md:px-8 mt-6">
+          <!-- Review-Based Recommendations -->
           <div
             class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-2xl shadow-md mb-6"
           >
@@ -349,7 +350,69 @@
               />
             </div>
           </div>
-          <p v-else class="text-gray-500">No recommendations available yet.</p>
+          <p v-else class="text-gray-500 mb-12">No review-based recommendations available yet.</p>
+
+          <!-- Watchlist-Based Recommendations -->
+          <div
+            class="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-6 rounded-2xl shadow-md mb-6"
+          >
+            <h3 class="text-2xl font-bold mb-2">More Suggestions Based on Your Watchlist 🎯</h3>
+            <p class="text-sm md:text-base">
+              Looks like you're into
+              <span class="font-semibold underline">{{ favoriteWatchlistGenreName }}</span> movies.
+              These picks might also be your taste.
+            </p>
+          </div>
+
+          <div v-if="watchlistBasedRecommendations.length">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+              <MovieCard
+                v-for="movie in watchlistBasedRecommendations"
+                :key="movie.id"
+                :movie-id="movie.id"
+                :title="movie.title"
+                :poster="movie.poster_path"
+                :genre="movie.genre_ids"
+                :release-date="movie.release_date"
+              />
+            </div>
+          </div>
+          <p v-else class="text-gray-500 mb-12">
+            No watchlist-based recommendations available yet.
+          </p>
+
+          <!-- Actor-Based Recommendations -->
+          <div
+            class="bg-gradient-to-r from-sky-600 to-indigo-600 text-white p-6 rounded-2xl shadow-md mb-6"
+          >
+            <h3 class="text-2xl font-bold mb-2">Movies Featuring Your Top-Rated Actors 🌟</h3>
+            <p class="text-sm md:text-base">
+              Based on your ratings, we noticed you enjoy performances by
+              <span
+                v-for="(actor, index) in topRatedActorNames"
+                :key="index"
+                class="font-semibold underline"
+              >
+                {{ actor }}<span v-if="index < topRatedActorNames.length - 1">,</span>
+              </span>
+              . Here are some of their best movies.
+            </p>
+          </div>
+
+          <div v-if="actorBasedRecommendations.length">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <MovieCard
+                v-for="movie in actorBasedRecommendations"
+                :key="movie.id"
+                :movie-id="movie.id"
+                :title="movie.title"
+                :poster="movie.poster_path"
+                :genre="movie.genre_ids"
+                :release-date="movie.release_date"
+              />
+            </div>
+          </div>
+          <p v-else class="text-gray-500">No actor-based recommendations available yet.</p>
         </div>
       </section>
     </div>
@@ -374,7 +437,7 @@ import MovieCard from '@/components/MovieCard.vue'
 import { clearWatchlist } from '../firebase/watchlistService'
 import Swal from 'sweetalert2'
 import { updateUserPassword, updateUserName } from '@/firebase/firebaseService'
-import { getMoviesByGenre, getGenreMap } from '@/services/tmdb'
+import { getMoviesByGenre, getGenreMap, getActorMovies } from '@/services/tmdb'
 
 import { toRaw } from 'vue'
 console.log('raw currentUser:', toRaw(currentUser.value))
@@ -393,6 +456,15 @@ const editMode = reactive({
 const favoriteGenreId = ref(null)
 const favoriteGenreName = ref('')
 const recommendedMovies = ref([])
+
+// Watchlist-based recommendations
+const favoriteWatchlistGenreId = ref(null)
+const favoriteWatchlistGenreName = ref('')
+const watchlistBasedRecommendations = ref([])
+
+const topRatedActorIds = ref([]) // Store TMDB person_ids of top 5 actors
+const topRatedActorNames = ref([]) // Store their names for UI display
+const actorBasedRecommendations = ref([]) // Movies to recommend based on those actors
 
 // Reviews State
 const allUserReviews = ref([])
@@ -415,6 +487,8 @@ const detectFavoriteGenre = async () => {
   const genreMap = await getGenreMap() // { 28: 'Action', 12: 'Adventure', ... }
 
   for (const review of allUserReviews.value) {
+    if (review.sentiment !== 'positive') continue // ✅ Only count positive reviews
+
     const genres = review.genre_ids
     if (Array.isArray(genres)) {
       for (const gid of genres) {
@@ -428,12 +502,83 @@ const detectFavoriteGenre = async () => {
     const [topGenreId] = sorted[0]
     favoriteGenreId.value = parseInt(topGenreId)
 
-    // Find genre name by reversing genreMap (ID → name)
     const nameEntry = Object.entries(genreMap).find(
       ([id]) => parseInt(id) === favoriteGenreId.value,
     )
     favoriteGenreName.value = nameEntry ? nameEntry[1] : 'Unknown'
+  } else {
+    favoriteGenreId.value = null
+    favoriteGenreName.value = 'None yet'
   }
+}
+
+const detectWatchlistFavoriteGenre = async () => {
+  const genreCount = {}
+  const genreMap = await getGenreMap() // { 28: 'Action', 35: 'Comedy', ... }
+
+  for (const movie of watchlistMovies.value) {
+    const genreName = movie.primaryGenre?.trim()
+    if (genreName) {
+      genreCount[genreName] = (genreCount[genreName] || 0) + 1
+    }
+  }
+
+  const sorted = Object.entries(genreCount).sort((a, b) => b[1] - a[1])
+  if (sorted.length > 0) {
+    const [topGenreName] = sorted[0]
+    favoriteWatchlistGenreName.value = topGenreName
+
+    // Reverse lookup to get the genre ID from genreMap
+    const genreEntry = Object.entries(genreMap).find(([, name]) => name === topGenreName)
+    favoriteWatchlistGenreId.value = genreEntry ? parseInt(genreEntry[0]) : null
+  } else {
+    favoriteWatchlistGenreName.value = 'None yet'
+    favoriteWatchlistGenreId.value = null
+  }
+}
+
+const detectTopRatedActors = async () => {
+  const userId = currentUser.value?.uid
+  if (!userId) return
+
+  // Step 1: Fetch all cast ratings from Firestore
+  const castRatingsSnap = await getDocs(collection(db, 'users', userId, 'cast_ratings'))
+  const ratings = castRatingsSnap.docs.map((doc) => doc.data())
+
+  // Step 2: Count only ratings >= 4
+  const positiveCounts = {} // { actorId: count }
+
+  for (const r of ratings) {
+    const id = r.castId
+    const score = Number(r.rating)
+    if (score >= 4) {
+      positiveCounts[id] = (positiveCounts[id] || 0) + 1
+    }
+  }
+
+  // Step 3: Sort by count and pick top 5
+  const sorted = Object.entries(positiveCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+
+  topRatedActorIds.value = sorted.map(([id]) => id)
+
+  // Step 4: Fetch actor names from TMDB using person endpoint
+  const names = []
+  for (const id of topRatedActorIds.value) {
+    try {
+      const res = await fetch(
+        `https://api.themoviedb.org/3/person/${id}?api_key=${import.meta.env.VITE_TMDB_API_KEY}`,
+      )
+      const data = await res.json()
+      names.push(data.name || 'Unknown')
+    } catch (err) {
+      console.warn(`Failed to fetch actor name for ID ${id}`, err)
+      names.push('Unknown')
+    }
+  }
+
+  topRatedActorNames.value = names
 }
 
 const fetchRecommendedMovies = async () => {
@@ -449,6 +594,63 @@ const fetchRecommendedMovies = async () => {
       .slice(0, 12)
   } catch (err) {
     console.error('Error fetching recommended movies:', err)
+  }
+}
+
+const fetchWatchlistBasedRecommendations = async () => {
+  if (!favoriteWatchlistGenreName.value) return
+
+  try {
+    const movies = await getMoviesByGenre(favoriteWatchlistGenreName.value)
+    const watchlistIds = new Set(watchlistMovies.value.map((m) => String(m.id)))
+    const reviewedIds = new Set(allUserReviews.value.map((r) => String(r.movieId)))
+
+    watchlistBasedRecommendations.value = movies
+      .filter((movie) => !watchlistIds.has(String(movie.id)) && !reviewedIds.has(String(movie.id)))
+      .slice(0, 12)
+  } catch (err) {
+    console.error('Error fetching watchlist-based recommendations:', err)
+  }
+}
+
+const fetchActorBasedRecommendations = async () => {
+  try {
+    const allMovieIds = new Set()
+
+    // Step 1–2: Gather all unique movie IDs from top 5 actors
+    for (const actorId of topRatedActorIds.value) {
+      const movies = await getActorMovies(actorId) // from tmdb.js helper
+      for (const movie of movies) {
+        allMovieIds.add(movie.id)
+      }
+    }
+
+    // Step 3: Filter out reviewed + watchlist
+    const reviewedIds = new Set(allUserReviews.value.map((r) => String(r.movieId)))
+    const watchlistIds = new Set(watchlistMovies.value.map((m) => String(m.id)))
+
+    const filteredMovieIds = [...allMovieIds].filter(
+      (id) => !reviewedIds.has(String(id)) && !watchlistIds.has(String(id)),
+    )
+
+    // Step 4–5: Fetch full movie data for top N (e.g. 15)
+    const topMovies = []
+    for (const id of filteredMovieIds.slice(0, 15)) {
+      try {
+        const res = await fetch(
+          `https://api.themoviedb.org/3/movie/${id}?api_key=${import.meta.env.VITE_TMDB_API_KEY}`,
+        )
+
+        const data = await res.json()
+        topMovies.push(data)
+      } catch (err) {
+        console.warn(`Failed to fetch movie ${id}:`, err)
+      }
+    }
+
+    actorBasedRecommendations.value = topMovies
+  } catch (err) {
+    console.error('Error in fetchActorBasedRecommendations:', err)
   }
 }
 
@@ -628,19 +830,26 @@ watch(currentUser, (user) => {
   }
 })
 
-// Fetch data on mount
 onMounted(async () => {
   if (currentUser.value?.uid) {
-    // Reviews
+    // Load Reviews
     allUserReviews.value = await getReviewsByUser(currentUser.value.uid)
 
-    // Watchlist
+    // Load Watchlist
     const snap = await getDocs(collection(db, 'users', currentUser.value.uid, 'watchlist'))
     watchlistMovies.value = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
-    // New ➕
+    // Review-based Recommendations
     await detectFavoriteGenre()
     await fetchRecommendedMovies()
+
+    // Watchlist-based Recommendations
+    await detectWatchlistFavoriteGenre()
+    await fetchWatchlistBasedRecommendations()
+
+    // Actor-based Recommendations
+    await detectTopRatedActors()
+    await fetchActorBasedRecommendations()
   }
 })
 </script>
