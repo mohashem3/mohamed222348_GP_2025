@@ -327,13 +327,21 @@
         <div v-if="activeTab === 'recommendations'" class="px-4 sm:px-6 md:px-8 mt-6">
           <!-- Review-Based Recommendations -->
           <div
-            class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-2xl shadow-md mb-6"
+            class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg mb-6"
           >
-            <h3 class="text-2xl font-bold mb-2">Your Personalized Movie Picks 🍿</h3>
+            <h3 class="text-2xl font-bold mb-3">Your Personalized Movie Picks 🍿</h3>
             <p class="text-sm md:text-base">
-              Based on your <span class="font-semibold">review history</span>, we found your
-              favorite genre is <span class="font-semibold underline">{{ favoriteGenreName }}</span
-              >. Here are some handpicked movies we think you'll love.
+              Based on your
+              <span class="font-bold text-yellow-200">Review History</span>, we found your favorite
+              genre is:
+              <span
+                class="inline-block bg-white text-purple-700 font-semibold text-sm px-3 py-[2px] rounded-full shadow-[0_0_12px_rgba(139,92,246,0.9)] mx-1"
+              >
+                {{ favoriteGenreName }}
+              </span>
+            </p>
+            <p class="text-sm md:text-base mt-1">
+              Here are some handpicked movies we think you'll love.
             </p>
           </div>
 
@@ -344,7 +352,7 @@
                 :key="movie.id"
                 :movie-id="movie.id"
                 :title="movie.title"
-                :poster="movie.poster_path"
+                :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
                 :genre="movie.genre_ids"
                 :release-date="movie.release_date"
               />
@@ -354,14 +362,19 @@
 
           <!-- Watchlist-Based Recommendations -->
           <div
-            class="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-6 rounded-2xl shadow-md mb-6"
+            class="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-6 rounded-2xl shadow-lg mb-6"
           >
-            <h3 class="text-2xl font-bold mb-2">More Suggestions Based on Your Watchlist 🎯</h3>
+            <h3 class="text-2xl font-bold mb-3">More Suggestions Based on Your Watchlist 🎯</h3>
             <p class="text-sm md:text-base">
-              Looks like you're into
-              <span class="font-semibold underline">{{ favoriteWatchlistGenreName }}</span> movies.
-              These picks might also be your taste.
+              Based on your
+              <span class="font-bold text-yellow-100">Watchlist</span>, it looks like you're into
+              <span
+                class="inline-block bg-white text-rose-600 font-semibold text-sm px-3 py-[2px] rounded-full shadow-[0_0_12px_rgba(244,114,182,0.9)] mx-1"
+              >
+                {{ favoriteWatchlistGenreName }}
+              </span>
             </p>
+            <p class="text-sm md:text-base mt-1">These picks might also be your taste:</p>
           </div>
 
           <div v-if="watchlistBasedRecommendations.length">
@@ -371,7 +384,7 @@
                 :key="movie.id"
                 :movie-id="movie.id"
                 :title="movie.title"
-                :poster="movie.poster_path"
+                :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
                 :genre="movie.genre_ids"
                 :release-date="movie.release_date"
               />
@@ -383,20 +396,24 @@
 
           <!-- Actor-Based Recommendations -->
           <div
-            class="bg-gradient-to-r from-sky-600 to-indigo-600 text-white p-6 rounded-2xl shadow-md mb-6"
+            class="bg-gradient-to-r from-sky-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg mb-6"
           >
-            <h3 class="text-2xl font-bold mb-2">Movies Featuring Your Top-Rated Actors 🌟</h3>
+            <h3 class="text-2xl font-bold mb-3">Movies Featuring Your Top-Rated Actors 🌟</h3>
             <p class="text-sm md:text-base">
-              Based on your ratings, we noticed you enjoy performances by
+              Based on your
+              <span class="font-bold text-yellow-100">Actor Ratings</span>, we noticed you enjoy
+              performances by:
+            </p>
+            <div class="flex flex-wrap gap-2 mt-2 mb-1">
               <span
                 v-for="(actor, index) in topRatedActorNames"
                 :key="index"
-                class="font-semibold underline"
+                class="inline-block bg-white text-blue-700 font-semibold text-sm px-4 py-1 rounded-full shadow-[0_0_12px_rgba(96,165,250,0.9)]"
               >
-                {{ actor }}<span v-if="index < topRatedActorNames.length - 1">,</span>
+                {{ actor }}
               </span>
-              . Here are some of their best movies.
-            </p>
+            </div>
+            <p class="text-sm md:text-base">Here are some of their best movies:</p>
           </div>
 
           <div v-if="actorBasedRecommendations.length">
@@ -406,7 +423,7 @@
                 :key="movie.id"
                 :movie-id="movie.id"
                 :title="movie.title"
-                :poster="movie.poster_path"
+                :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
                 :genre="movie.genre_ids"
                 :release-date="movie.release_date"
               />

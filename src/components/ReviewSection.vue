@@ -77,22 +77,95 @@
       </select>
     </div>
 
-    <div class="my-6 p-4 rounded-lg bg-gray-50 shadow-sm">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-lg font-semibold text-gray-700">🧠 Summary of User Reviews</h3>
+    <!-- REVIEW SUMMARY SECTION -->
+    <div class="my-10 p-6 rounded-2xl bg-white border border-gray-200 shadow-md">
+      <!-- BUTTON: shown before summary -->
+      <div
+        v-if="!summary && !isSummarizing"
+        class="p-10 flex justify-center items-center rounded-2xl shadow-lg border border-gray-100 bg-white"
+      >
         <button
           @click="summarizeReviews"
-          :disabled="isSummarizing"
-          class="px-4 py-2 text-sm font-medium rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+          class="px-10 py-4 text-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full pulse-glow-purple transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-[0_0_40px_rgba(139,92,246,0.6)] hover:brightness-110 hover:saturate-150"
         >
-          <span v-if="!isSummarizing">Summarize Reviews</span>
-          <span v-else class="animate-pulse">Summarizing...</span>
+          Summarize Reviews
         </button>
       </div>
 
-      <p v-if="summaryResult" class="text-gray-600 whitespace-pre-line mt-2">
-        {{ summaryResult }}
-      </p>
+      <!-- LOADING SPINNER -->
+      <div v-if="isSummarizing" class="flex justify-center items-center py-12">
+        <svg
+          class="animate-spin h-8 w-8 text-indigo-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+      </div>
+
+      <!-- SUMMARY CONTENT -->
+      <div v-if="summary && !isSummarizing">
+        <!-- Compact Header -->
+        <div
+          class="inline-block px-6 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-base font-semibold rounded-full shadow-md mb-6"
+        >
+          Summary of User Reviews
+        </div>
+
+        <!-- Glowing Summary Box -->
+        <div
+          class="bg-white p-6 rounded-xl border border-purple-400 shadow-[0_0_60px_rgba(168,85,247,0.4)] ring-4 ring-purple-100 mb-10"
+        >
+          <p class="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">
+            {{ summary }}
+          </p>
+        </div>
+
+        <!-- Positive Points -->
+        <div v-if="positives.length" class="mb-6">
+          <div
+            class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-green-700 shadow-[0_0_20px_rgba(74,222,128,0.4)] border border-gray-200 mb-3"
+          >
+            Positive Points
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <span
+              v-for="(item, i) in positives"
+              :key="'pos-' + i"
+              class="bg-green-50 border border-green-300 text-green-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
+            >
+              {{ item }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Negative Points -->
+        <div v-if="negatives.length">
+          <div
+            class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-red-700 shadow-[0_0_20px_rgba(248,113,113,0.4)] border border-gray-200 mb-3"
+          >
+            Negative Points
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <span
+              v-for="(item, i) in negatives"
+              :key="'neg-' + i"
+              class="bg-red-50 border border-red-300 text-red-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
+            >
+              {{ item }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Review List -->
@@ -316,12 +389,19 @@ let unsubscribe = null
 const reviewsPerPage = 5
 const currentPage = ref(1)
 
-const summaryResult = ref('')
 const isSummarizing = ref(false)
+
+const summary = ref('')
+const tone = ref('')
+const positives = ref([])
+const negatives = ref([])
 
 const summarizeReviews = async () => {
   isSummarizing.value = true
-  summaryResult.value = ''
+  summary.value = ''
+  tone.value = ''
+  positives.value = []
+  negatives.value = []
 
   try {
     const reviewTexts = await getReviewTextsByMovie(props.movieId)
@@ -337,8 +417,11 @@ const summarizeReviews = async () => {
       body: JSON.stringify({ reviews: reviewTexts }),
     })
 
-    const { summary } = await response.json()
-    summaryResult.value = summary
+    const data = await response.json()
+    summary.value = data.summary
+    tone.value = data.tone
+    positives.value = data.positives
+    negatives.value = data.negatives
   } catch (error) {
     console.error(error)
     Swal.fire('Error', 'Failed to summarize reviews.', 'error')
@@ -663,6 +746,25 @@ onUnmounted(() => {
     transform: scale(1);
     box-shadow: 0 0 12px rgba(255, 230, 0, 0.4);
   }
+}
+
+@keyframes pulseGlowPurple {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(139, 92, 246, 0.45);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 36px rgba(139, 92, 246, 0.55);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(139, 92, 246, 0.45);
+  }
+}
+
+.pulse-glow-purple {
+  animation: pulseGlowPurple 1.8s ease-in-out infinite;
 }
 
 .pulse-glow-mixed {
