@@ -45,6 +45,64 @@
             :values="pieData1.values"
             :colors="pieData1.colors"
           />
+
+          <!-- Summary Section -->
+          <div
+            v-if="summary1 && !isSummarizing1"
+            class="w-full bg-white p-6 rounded-2xl border border-purple-200 shadow-[0_0_60px_rgba(168,85,247,0.3)] ring-4 ring-purple-100"
+          >
+            <!-- Gradient Header -->
+            <div class="flex justify-center mb-4">
+              <div
+                class="inline-block px-4 py-2 text-sm font-semibold text-white rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 shadow"
+              >
+                AI-Powered Analysis of User Reviews
+              </div>
+            </div>
+
+            <!-- Scrollable Summary Text -->
+            <div
+              class="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-800 font-medium leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto mb-6 shadow-inner"
+            >
+              {{ summary1 }}
+            </div>
+
+            <!-- Positive Points -->
+            <div v-if="positives1.length" class="mb-4">
+              <div
+                class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-green-700 shadow-[0_0_20px_rgba(34,197,94,0.3)] border border-gray-200 mb-3"
+              >
+                Positive Points
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="(item, i) in positives1"
+                  :key="'pos1-' + i"
+                  class="bg-green-50 border border-green-300 text-green-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
+                >
+                  {{ item }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Negative Points -->
+            <div v-if="negatives1.length">
+              <div
+                class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-red-700 shadow-[0_0_20px_rgba(248,113,113,0.3)] border border-gray-200 mb-3"
+              >
+                Negative Points
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="(item, i) in negatives1"
+                  :key="'neg1-' + i"
+                  class="bg-red-50 border border-red-300 text-red-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
+                >
+                  {{ item }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -97,9 +155,69 @@
             :values="pieData2.values"
             :colors="pieData2.colors"
           />
+
+          <!-- Summary Section Movie 2 -->
+          <!-- Summary Section -->
+          <div
+            v-if="summary2 && !isSummarizing2"
+            class="w-full bg-white p-6 rounded-2xl border border-purple-200 shadow-[0_0_60px_rgba(168,85,247,0.3)] ring-4 ring-purple-100"
+          >
+            <!-- Gradient Header -->
+            <div class="flex justify-center mb-4">
+              <div
+                class="inline-block px-4 py-2 text-sm font-semibold text-white rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 shadow"
+              >
+                AI-Powered Analysis of User Reviews
+              </div>
+            </div>
+
+            <!-- Scrollable Summary Text -->
+            <div
+              class="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-800 font-medium leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto mb-6 shadow-inner"
+            >
+              {{ summary2 }}
+            </div>
+
+            <!-- Positive Points -->
+            <div v-if="positives2.length" class="mb-4">
+              <div
+                class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-green-700 shadow-[0_0_20px_rgba(34,197,94,0.3)] border border-gray-200 mb-3"
+              >
+                Positive Points
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="(item, i) in positives2"
+                  :key="'pos1-' + i"
+                  class="bg-green-50 border border-green-300 text-green-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
+                >
+                  {{ item }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Negative Points -->
+            <div v-if="negatives2.length">
+              <div
+                class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-red-700 shadow-[0_0_20px_rgba(248,113,113,0.3)] border border-gray-200 mb-3"
+              >
+                Negative Points
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="(item, i) in negatives2"
+                  :key="'neg1-' + i"
+                  class="bg-red-50 border border-red-300 text-red-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
+                >
+                  {{ item }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
     <!-- Clear Comparison Button -->
     <div class="mt-16 flex justify-center">
       <button
@@ -128,6 +246,54 @@ const selected2 = ref(null)
 const pieData1 = ref(null)
 const pieData2 = ref(null)
 
+const summary1 = ref('')
+const summary2 = ref('')
+const positives1 = ref([])
+const positives2 = ref([])
+const negatives1 = ref([])
+const negatives2 = ref([])
+const isSummarizing1 = ref(false)
+const isSummarizing2 = ref(false)
+
+import { getReviewTextsByMovie } from '@/firebase/reviewService'
+
+const summarizeReviewsForMovie = async (movieId, field) => {
+  const summaryRef = field === 1 ? summary1 : summary2
+  const positivesRef = field === 1 ? positives1 : positives2
+  const negativesRef = field === 1 ? negatives1 : negatives2
+  const loadingRef = field === 1 ? isSummarizing1 : isSummarizing2
+
+  loadingRef.value = true
+  summaryRef.value = ''
+  positivesRef.value = []
+  negativesRef.value = []
+
+  try {
+    const reviewTexts = await getReviewTextsByMovie(String(movieId))
+
+    if (reviewTexts.length === 0) {
+      summaryRef.value = 'No reviews available to summarize.'
+      return
+    }
+
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/summarize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviews: reviewTexts }),
+    })
+
+    const data = await res.json()
+    summaryRef.value = data.summary
+    positivesRef.value = data.positives
+    negativesRef.value = data.negatives
+  } catch (err) {
+    summaryRef.value = 'Failed to generate summary.'
+    console.error(err)
+  } finally {
+    loadingRef.value = false
+  }
+}
+
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY
 
 const searchTMDB = async (field) => {
@@ -150,12 +316,14 @@ const selectMovie = async (field, movie) => {
     selected1.value = movie
     search1.value = movie.title
     results1.value = []
-    await loadPieChartData(movie.id, 1)
+    await loadPieChartData(movie.id, field)
+    await summarizeReviewsForMovie(movie.id, field)
   } else {
     selected2.value = movie
     search2.value = movie.title
     results2.value = []
-    await loadPieChartData(movie.id, 2)
+    await loadPieChartData(movie.id, field)
+    await summarizeReviewsForMovie(movie.id, field)
   }
 }
 

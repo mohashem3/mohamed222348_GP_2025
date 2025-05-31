@@ -79,17 +79,25 @@
 
     <!-- REVIEW SUMMARY SECTION -->
     <div class="my-10 p-6 rounded-2xl bg-white border border-gray-200 shadow-md">
-      <!-- BUTTON: shown before summary -->
+      <!-- BUTTON & BADGE (shown before summary) -->
       <div
         v-if="!summary && !isSummarizing"
-        class="p-10 flex justify-center items-center rounded-2xl shadow-lg border border-gray-100 bg-white"
+        class="flex flex-col items-center gap-3 bg-gradient-to-br from-white via-purple-50 to-white p-10 rounded-2xl shadow-inner border border-purple-100"
       >
+        <!-- Button -->
         <button
           @click="summarizeReviews"
-          class="px-10 py-4 text-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full pulse-glow-purple transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-[0_0_40px_rgba(139,92,246,0.6)] hover:brightness-110 hover:saturate-150"
+          class="w-64 py-3 text-base font-semibold text-white bg-gradient-to-r from-fuchsia-600 to-pink-500 rounded-xl pulse-glow-purple transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-[0_0_40px_rgba(236,72,153,0.5)] hover:brightness-110 hover:saturate-150"
         >
-          Summarize Reviews
+          Analyze Reviews
         </button>
+
+        <!-- Badge -->
+        <span
+          class="text-[11px] font-bold tracking-wide text-white bg-gradient-to-r from-purple-800 via-indigo-700 to-indigo-600 px-4 py-[5px] rounded-full shadow-sm uppercase mt-1"
+        >
+          AI-Powered Review Analyzer
+        </span>
       </div>
 
       <!-- LOADING SPINNER -->
@@ -118,7 +126,7 @@
         <div
           class="inline-block px-6 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-base font-semibold rounded-full shadow-md mb-6"
         >
-          Summary of User Reviews
+          AI-Powered Analysis of User Reviews
         </div>
 
         <!-- Glowing Summary Box -->
@@ -195,7 +203,7 @@
             <!-- Sentiment Badge -->
             <!-- Sentiment Badge with Tooltip & Animation -->
             <span
-              class="inline-block px-4 py-2 rounded-full text-sm font-bold uppercase text-center transition-transform"
+              class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase transition-transform"
               :class="[
                 review.sentiment === 'positive'
                   ? 'bg-green-100 text-green-800 pulse-glow-positive'
@@ -203,10 +211,25 @@
                     ? 'bg-red-100 text-red-800 pulse-glow-negative'
                     : 'bg-yellow-100 text-yellow-800 pulse-glow-mixed',
               ]"
-              :style="{ minWidth: '140px', display: 'inline-block' }"
-              :title="`This is how our AI interpreted the review sentiment with ${review.confidence || 100}% confidence.`"
+              :style="{ minWidth: '140px', display: 'inline-flex' }"
+              :title="`Our AI is ${review.confidence || 100}% confident that your review is ${review.sentiment.toUpperCase().toLowerCase()}.`"
             >
-              {{ review.sentiment.toUpperCase() }} ({{ review.confidence || 100 }}%)
+              <!-- Sentiment -->
+              <span class="font-bold tracking-tight">{{ review.sentiment.toUpperCase() }}</span>
+
+              <!-- Confidence badge -->
+              <span
+                class="text-white text-[11px] font-bold px-2 py-[2px] rounded-full shadow"
+                :class="[
+                  review.sentiment === 'positive'
+                    ? 'bg-green-600'
+                    : review.sentiment === 'negative'
+                      ? 'bg-red-600'
+                      : 'bg-yellow-500',
+                ]"
+              >
+                {{ review.confidence || 100 }}%
+              </span>
             </span>
           </div>
 

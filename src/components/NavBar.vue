@@ -152,6 +152,12 @@
       <!-- Nav Links -->
       <div class="border-t border-gray-700 pt-2 pb-3 flex justify-center space-x-6 text-sm">
         <router-link
+          to="/dashboard"
+          class="px-4 py-2 rounded-md no-underline font-semibold text-white bg-gray-800 hover:bg-gray-700"
+          exact-active-class="bg-gray-700"
+          >DASHBOARD</router-link
+        >
+        <router-link
           to="/"
           class="px-4 py-2 rounded-md no-underline font-semibold text-white bg-gray-800 hover:bg-gray-700"
           exact-active-class="bg-gray-700"
