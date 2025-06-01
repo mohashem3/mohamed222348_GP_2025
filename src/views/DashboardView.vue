@@ -4,7 +4,7 @@
     <SideBar :activeTab="activeTab" @change-tab="setActiveTab" />
 
     <!-- Main content -->
-    <div class="flex-1 bg-gray-50 min-h-screen p-6">
+    <div class="flex-1 overflow-y-auto h-[calc(100vh-5rem)] p-6">
       <DashboardTab v-if="activeTab === 'dashboard'" />
       <ReviewHistoryTab v-else-if="activeTab === 'reviews'" />
       <WatchlistTab v-else-if="activeTab === 'watchlist'" />

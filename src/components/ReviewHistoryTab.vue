@@ -26,16 +26,20 @@
           >
             {{ review.movieTitle }}
           </div>
-          <span
-            class="inline-block px-4 py-1 rounded-full text-sm font-bold uppercase tracking-wide transition-shadow duration-300 ease-in-out text-center min-w-[140px]"
+          <div
+            class="inline-flex items-center space-x-2 bg-opacity-40 px-3 py-1 rounded-full text-sm uppercase tracking-wide transition-shadow duration-300 ease-in-out"
             :class="sentimentClass(review.sentiment)"
-            :title="`This is how our AI interpreted the review sentiment with ${review.confidence || 100}% confidence.`"
+            :title="`Our AI detected this review as ${review.sentiment.toUpperCase()} with ${review.confidence || 100}% confidence.`"
           >
-            {{ review.sentiment.toUpperCase() }}
-            <template v-if="review.confidence !== undefined && review.confidence !== null">
-              ({{ review.confidence }}%)
-            </template>
-          </span>
+            <span class="font-extrabold">{{ review.sentiment.toUpperCase() }}</span>
+            <span
+              v-if="review.confidence !== undefined && review.confidence !== null"
+              class="text-white text-xs bg-opacity-70 px-2 py-0.5 rounded-full font-semibold"
+              :class="confidenceBadgeColor(review.sentiment)"
+            >
+              {{ review.confidence }}%
+            </span>
+          </div>
         </div>
 
         <p class="text-gray-500 text-sm mb-1">{{ review.createdAtFormatted }}</p>
@@ -109,6 +113,14 @@ const filterOption = ref('newest')
 
 const goToMovie = (movieId, title) => {
   router.push({ name: 'MovieDetails', params: { id: movieId }, query: { title } })
+}
+
+const confidenceBadgeColor = (sentiment) => {
+  return {
+    positive: 'bg-green-600',
+    negative: 'bg-red-600',
+    neutral: 'bg-yellow-500',
+  }[sentiment]
 }
 
 const sentimentClass = (sentiment) => {

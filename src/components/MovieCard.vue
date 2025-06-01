@@ -131,6 +131,7 @@ import { getReviewsForMovie } from '@/firebase/reviewService'
 import { getAuth } from 'firebase/auth'
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/firebase/firebaseConfig'
+import { watchEffect } from 'vue' // ✅ add this
 
 const GENRE_MAP = {
   28: 'Action',
@@ -179,20 +180,17 @@ export default {
         return this.matchedGenre.charAt(0).toUpperCase() + this.matchedGenre.slice(1)
       }
 
-      // 🎯 Support genre_ids (array of numbers)
       if (Array.isArray(this.genre) && typeof this.genre[0] === 'number') {
         const id = this.genre[0]
         return GENRE_MAP[id] || 'Unknown'
       }
 
-      // 🎯 Support genres (array of { id, name })
       if (Array.isArray(this.genre) && typeof this.genre[0] === 'object') {
         return this.genre[0].name || 'Unknown'
       }
 
       return 'Unknown'
     },
-
     releaseYear() {
       return this.releaseDate ? new Date(this.releaseDate).getFullYear() : null
     },
@@ -206,40 +204,47 @@ export default {
       if (total === 0) {
         this.sentiment = { label: 'No Reviews', percentage: null }
         this.starRating = 0
-        return
-      }
-
-      const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
-      const negativeReviews = reviews.filter((r) => r.sentiment === 'negative').length
-      const NeutralReviews = reviews.filter((r) => r.sentiment === 'Neutral').length
-
-      const positivePercent = (positiveReviews / total) * 100
-      const negativePercent = (negativeReviews / total) * 100
-      const NeutralPercent = (NeutralReviews / total) * 100
-
-      // 🎯 Determine dominant sentiment
-      if (positivePercent > 50) {
-        this.sentiment = { label: 'Positive', percentage: Math.round(positivePercent) }
-      } else if (negativePercent > 50) {
-        this.sentiment = { label: 'Negative', percentage: Math.round(negativePercent) }
-      } else if (NeutralPercent > 50) {
-        this.sentiment = { label: 'Neutral', percentage: Math.round(NeutralPercent) }
       } else {
-        this.sentiment = { label: 'Neutral', percentage: null }
-      }
+        const positiveReviews = reviews.filter((r) => r.sentiment === 'positive').length
+        const negativeReviews = reviews.filter((r) => r.sentiment === 'negative').length
+        const NeutralReviews = reviews.filter((r) => r.sentiment === 'Neutral').length
 
-      // Set star rating based on actual user ratings
-      if (total > 0) {
+        const positivePercent = (positiveReviews / total) * 100
+        const negativePercent = (negativeReviews / total) * 100
+        const NeutralPercent = (NeutralReviews / total) * 100
+
+        if (positivePercent > 50) {
+          this.sentiment = { label: 'Positive', percentage: Math.round(positivePercent) }
+        } else if (negativePercent > 50) {
+          this.sentiment = { label: 'Negative', percentage: Math.round(negativePercent) }
+        } else if (NeutralPercent > 50) {
+          this.sentiment = { label: 'Neutral', percentage: Math.round(NeutralPercent) }
+        } else {
+          this.sentiment = { label: 'Neutral', percentage: null }
+        }
+
         const totalRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0)
         this.starRating = Math.round(totalRating / total)
-      } else {
-        this.starRating = 0
       }
-
-      await this.checkFavorite()
     } catch (err) {
       console.error('Error loading movie card data:', err)
     }
+
+    // ✅ Reactive favorite status check
+    watchEffect(async () => {
+      const auth = getAuth()
+      const user = auth.currentUser
+      if (!user || !this.movieId) return
+
+      try {
+        const favRef = doc(db, 'users', user.uid, 'watchlist', String(this.movieId))
+        const snap = await getDoc(favRef)
+        this.isFavorite = snap.exists()
+      } catch (err) {
+        console.error('Favorite check failed:', err)
+        this.isFavorite = false
+      }
+    })
   },
   methods: {
     handleReview() {
@@ -249,15 +254,6 @@ export default {
         params: { id: this.movieId },
         query: { title: this.title },
       })
-    },
-    async checkFavorite() {
-      const auth = getAuth()
-      const user = auth.currentUser
-      if (!user) return
-
-      const favRef = doc(db, 'users', user.uid, 'watchlist', String(this.movieId))
-      const docSnap = await getDoc(favRef)
-      this.isFavorite = docSnap.exists()
     },
     async toggleFavorite() {
       const auth = getAuth()
@@ -277,9 +273,8 @@ export default {
           poster: this.poster,
           releaseDate: this.releaseDate,
           addedAt: new Date(),
-          primaryGenre: this.genreName, // ✅ clean 1 genre only
+          primaryGenre: this.genreName,
         })
-
         this.isFavorite = true
       }
     },

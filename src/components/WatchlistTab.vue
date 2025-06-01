@@ -22,7 +22,7 @@
           :movie-id="movie.movieId"
           :title="movie.title"
           :poster="movie.poster"
-          :genre="movie.genre || []"
+          :matched-genre="movie.primaryGenre"
           :release-date="movie.releaseDate || ''"
           @removed="removeFromWatchlistState"
         />

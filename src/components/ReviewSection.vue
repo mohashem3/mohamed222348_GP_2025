@@ -203,23 +203,20 @@
             <!-- Sentiment Badge -->
             <!-- Sentiment Badge with Tooltip & Animation -->
             <span
-              class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase transition-transform"
+              class="inline-flex items-center space-x-2 px-4 py-1 rounded-full text-sm uppercase tracking-wide font-bold transition-shadow duration-300 ease-in-out"
               :class="[
                 review.sentiment === 'positive'
-                  ? 'bg-green-100 text-green-800 pulse-glow-positive'
+                  ? 'bg-green-100 text-green-800 bg-opacity-40 pulse-glow-positive'
                   : review.sentiment === 'negative'
-                    ? 'bg-red-100 text-red-800 pulse-glow-negative'
-                    : 'bg-yellow-100 text-yellow-800 pulse-glow-mixed',
+                    ? 'bg-red-100 text-red-800 bg-opacity-40 pulse-glow-negative'
+                    : 'bg-yellow-100 text-yellow-800 bg-opacity-40 pulse-glow-mixed',
               ]"
-              :style="{ minWidth: '140px', display: 'inline-flex' }"
-              :title="`Our AI is ${review.confidence || 100}% confident that your review is ${review.sentiment.toUpperCase().toLowerCase()}.`"
+              :title="`Our AI detected this review as ${review.sentiment.toUpperCase()} with ${review.confidence || 100}% confidence.`"
             >
-              <!-- Sentiment -->
-              <span class="font-bold tracking-tight">{{ review.sentiment.toUpperCase() }}</span>
-
-              <!-- Confidence badge -->
+              <span class="font-extrabold">{{ review.sentiment.toUpperCase() }}</span>
               <span
-                class="text-white text-[11px] font-bold px-2 py-[2px] rounded-full shadow"
+                v-if="review.confidence !== undefined && review.confidence !== null"
+                class="text-white text-xs px-2 py-0.5 rounded-full font-semibold bg-opacity-70"
                 :class="[
                   review.sentiment === 'positive'
                     ? 'bg-green-600'
@@ -228,7 +225,7 @@
                       : 'bg-yellow-500',
                 ]"
               >
-                {{ review.confidence || 100 }}%
+                {{ review.confidence }}%
               </span>
             </span>
           </div>
@@ -550,37 +547,51 @@ const handleSubmitReview = async () => {
     Swal.fire({
       title: '🎉 Review Sent!',
       html: `
-    <p>Your review was submitted successfully.</p>
+  <p>Your review was submitted successfully.</p>
 
-    <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
-      Review Sentiment:
-    </p>
+  <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
+    Review Sentiment:
+  </p>
 
-    <div style="
-      display: inline-block;
-      padding: 12px 24px;
-      margin-top: 10px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1.5rem;
-      text-transform: uppercase;
-      box-shadow: 0 0 18px ${
-        sentiment === 'positive' ? '#4ade80' : sentiment === 'negative' ? '#f87171' : '#facc15'
-      };
+  <div style="
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    margin-top: 10px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    box-shadow: 0 0 18px ${
+      sentiment === 'positive' ? '#4ade80' : sentiment === 'negative' ? '#f87171' : '#facc15'
+    };
+    background-color: ${
+      sentiment === 'positive' ? '#dcfce7' : sentiment === 'negative' ? '#fee2e2' : '#fef9c3'
+    };
+    color: ${
+      sentiment === 'positive' ? '#166534' : sentiment === 'negative' ? '#7f1d1d' : '#92400e'
+    };
+  ">
+    ${sentiment.toUpperCase()}
+    <span style="
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
       background-color: ${
-        sentiment === 'positive' ? '#dcfce7' : sentiment === 'negative' ? '#fee2e2' : '#fef9c3'
+        sentiment === 'positive' ? '#16a34a' : sentiment === 'negative' ? '#dc2626' : '#d97706'
       };
-      color: ${
-        sentiment === 'positive' ? '#166534' : sentiment === 'negative' ? '#7f1d1d' : '#92400e'
-      };
+      color: white;
     ">
-      ${sentiment.toUpperCase()} (${confidence}%)
-    </div>
+      ${confidence}%
+    </span>
+  </div>
 
-    <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
-      (AI analysis of your review's tone)
-    </p>
-  `,
+  <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+    (AI analysis of your review's tone)
+  </p>
+`,
       icon: 'success',
       confirmButtonColor: '#6366f1',
     })
@@ -628,7 +639,7 @@ const saveEdit = async (review) => {
     confidence = Math.round(confidence)
 
     if (confidence >= 45 && confidence <= 55) {
-      sentiment = 'mixed'
+      sentiment = 'neutral'
     }
 
     await updateReview(review.id, {
@@ -641,37 +652,51 @@ const saveEdit = async (review) => {
     Swal.fire({
       title: '🎉 Review Updated!',
       html: `
-    <p>Your review was updated successfully.</p>
+  <p>Your review was updated successfully!</p>
 
-    <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
-      Updated Sentiment:
-    </p>
+  <p style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: #4b5563;">
+    Review Sentiment:
+  </p>
 
-    <div style="
-      display: inline-block;
-      padding: 12px 24px;
-      margin-top: 10px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 1.5rem;
-      text-transform: uppercase;
-      box-shadow: 0 0 18px ${
-        sentiment === 'positive' ? '#4ade80' : sentiment === 'negative' ? '#f87171' : '#facc15'
-      };
+  <div style="
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    margin-top: 10px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    box-shadow: 0 0 18px ${
+      sentiment === 'positive' ? '#4ade80' : sentiment === 'negative' ? '#f87171' : '#facc15'
+    };
+    background-color: ${
+      sentiment === 'positive' ? '#dcfce7' : sentiment === 'negative' ? '#fee2e2' : '#fef9c3'
+    };
+    color: ${
+      sentiment === 'positive' ? '#166534' : sentiment === 'negative' ? '#7f1d1d' : '#92400e'
+    };
+  ">
+    ${sentiment.toUpperCase()}
+    <span style="
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
       background-color: ${
-        sentiment === 'positive' ? '#dcfce7' : sentiment === 'negative' ? '#fee2e2' : '#fef9c3'
+        sentiment === 'positive' ? '#16a34a' : sentiment === 'negative' ? '#dc2626' : '#d97706'
       };
-      color: ${
-        sentiment === 'positive' ? '#166534' : sentiment === 'negative' ? '#7f1d1d' : '#92400e'
-      };
+      color: white;
     ">
-      ${sentiment.toUpperCase()} (${confidence}%)
-    </div>
+      ${confidence}%
+    </span>
+  </div>
 
-    <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
-      (AI analysis of your updated review)
-    </p>
-  `,
+  <p style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+    (AI analysis of your review's tone)
+  </p>
+`,
       icon: 'success',
       confirmButtonColor: '#6366f1',
     })

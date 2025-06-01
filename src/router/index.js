@@ -7,7 +7,6 @@ import MovieDetails from '@/views/MovieDetails.vue'
 import CompareView from '@/views/CompareView.vue'
 import Swal from 'sweetalert2'
 import { currentUser } from '@/firebase/userState'
-import UserProfile from '@/views/UserProfile.vue'
 import Dashboard from '@/views/DashboardView.vue'
 
 const router = createRouter({
@@ -18,7 +17,6 @@ const router = createRouter({
     { path: '/login', component: LogIn, name: 'LogIn' },
     { path: '/movies', component: MovieList, name: 'Movies' },
     { path: '/compare', component: CompareView, name: 'Compare' },
-    { path: '/userprofile', component: UserProfile, name: 'UserProfile' },
     { path: '/dashboard', component: Dashboard, name: 'Dashboard' },
     {
       path: '/movie/:id',
