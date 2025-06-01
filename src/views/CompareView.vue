@@ -1,19 +1,20 @@
 <template>
-  <div class="min-h-screen bg-white pt-32 pb-12 px-4 sm:px-8">
+  <div class="min-h-screen bg-white pt-32 pb-20 px-4 sm:px-8">
     <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">Compare Two Movies</h2>
 
-    <div class="flex flex-col md:flex-row justify-center items-start gap-12">
-      <!-- Movie 1 -->
-      <div class="w-full max-w-md relative">
+    <div class="flex flex-col md:flex-row justify-center items-start gap-12 relative">
+      <!-- Movie 1 Panel -->
+      <div class="w-full max-w-md relative animate-fade-in" ref="target1">
         <input
           v-model="search1"
           @input="searchTMDB(1)"
           type="text"
           placeholder="Search Movie 1..."
-          class="w-full px-6 py-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
+          class="w-full px-6 py-4 rounded-xl border-2 border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-300 text-gray-800 placeholder-purple-500 font-semibold text-base tracking-wide transition"
         />
+
         <ul
-          v-if="results1.length && search1.trim()"
+          v-if="results1.length && search1.trim() && !selected1"
           class="absolute top-full left-0 w-full bg-white rounded-xl shadow-lg mt-2 z-10"
         >
           <li
@@ -26,7 +27,10 @@
           </li>
         </ul>
 
-        <div v-if="selected1" class="mt-6 flex flex-col items-center gap-4">
+        <div
+          v-if="selected1 && isVisible1"
+          class="mt-6 flex flex-col items-center gap-4 animate-fade-in"
+        >
           <MovieCard
             :movieId="selected1.id"
             :title="selected1.title"
@@ -46,12 +50,11 @@
             :colors="pieData1.colors"
           />
 
-          <!-- Summary Section -->
+          <!-- Summary Card -->
           <div
             v-if="summary1 && !isSummarizing1"
             class="w-full bg-white p-6 rounded-2xl border border-purple-200 shadow-[0_0_60px_rgba(168,85,247,0.3)] ring-4 ring-purple-100"
           >
-            <!-- Gradient Header -->
             <div class="flex justify-center mb-4">
               <div
                 class="inline-block px-4 py-2 text-sm font-semibold text-white rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 shadow"
@@ -60,14 +63,12 @@
               </div>
             </div>
 
-            <!-- Scrollable Summary Text -->
             <div
               class="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-800 font-medium leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto mb-6 shadow-inner"
             >
               {{ summary1 }}
             </div>
 
-            <!-- Positive Points -->
             <div v-if="positives1.length" class="mb-4">
               <div
                 class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-green-700 shadow-[0_0_20px_rgba(34,197,94,0.3)] border border-gray-200 mb-3"
@@ -85,7 +86,6 @@
               </div>
             </div>
 
-            <!-- Negative Points -->
             <div v-if="negatives1.length">
               <div
                 class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-red-700 shadow-[0_0_20px_rgba(248,113,113,0.3)] border border-gray-200 mb-3"
@@ -106,24 +106,23 @@
         </div>
       </div>
 
-      <!-- VS Circle -->
+      <!-- Gradient Divider -->
       <div
-        class="rounded-full bg-gray-100 text-xl font-bold w-14 h-14 flex items-center justify-center shadow mt-10 md:mt-28"
-      >
-        VS
-      </div>
+        class="hidden md:block w-[2px] h-[720px] bg-gradient-to-b from-purple-400 via-indigo-400 to-pink-400 opacity-60 rounded-full"
+      ></div>
 
-      <!-- Movie 2 -->
-      <div class="w-full max-w-md relative">
+      <!-- Movie 2 Panel -->
+      <div class="w-full max-w-md relative animate-fade-in" ref="target2">
         <input
           v-model="search2"
           @input="searchTMDB(2)"
           type="text"
           placeholder="Search Movie 2..."
-          class="w-full px-6 py-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
+          class="w-full px-6 py-4 rounded-xl border-2 border-rose-500 focus:outline-none focus:ring-4 focus:ring-rose-300 text-gray-800 placeholder-rose-500 font-semibold text-base tracking-wide transition"
         />
+
         <ul
-          v-if="results2.length && search2.trim()"
+          v-if="results2.length && search2.trim() && !selected2"
           class="absolute top-full left-0 w-full bg-white rounded-xl shadow-lg mt-2 z-10"
         >
           <li
@@ -136,7 +135,10 @@
           </li>
         </ul>
 
-        <div v-if="selected2" class="mt-6 flex flex-col items-center gap-4">
+        <div
+          v-if="selected2 && isVisible2"
+          class="mt-6 flex flex-col items-center gap-4 animate-fade-in"
+        >
           <MovieCard
             :movieId="selected2.id"
             :title="selected2.title"
@@ -156,13 +158,10 @@
             :colors="pieData2.colors"
           />
 
-          <!-- Summary Section Movie 2 -->
-          <!-- Summary Section -->
           <div
             v-if="summary2 && !isSummarizing2"
             class="w-full bg-white p-6 rounded-2xl border border-purple-200 shadow-[0_0_60px_rgba(168,85,247,0.3)] ring-4 ring-purple-100"
           >
-            <!-- Gradient Header -->
             <div class="flex justify-center mb-4">
               <div
                 class="inline-block px-4 py-2 text-sm font-semibold text-white rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 shadow"
@@ -171,14 +170,12 @@
               </div>
             </div>
 
-            <!-- Scrollable Summary Text -->
             <div
               class="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-800 font-medium leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto mb-6 shadow-inner"
             >
               {{ summary2 }}
             </div>
 
-            <!-- Positive Points -->
             <div v-if="positives2.length" class="mb-4">
               <div
                 class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-green-700 shadow-[0_0_20px_rgba(34,197,94,0.3)] border border-gray-200 mb-3"
@@ -188,7 +185,7 @@
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="(item, i) in positives2"
-                  :key="'pos1-' + i"
+                  :key="'pos2-' + i"
                   class="bg-green-50 border border-green-300 text-green-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
                 >
                   {{ item }}
@@ -196,7 +193,6 @@
               </div>
             </div>
 
-            <!-- Negative Points -->
             <div v-if="negatives2.length">
               <div
                 class="inline-block px-5 py-2 text-base font-semibold rounded-full bg-white text-red-700 shadow-[0_0_20px_rgba(248,113,113,0.3)] border border-gray-200 mb-3"
@@ -206,7 +202,7 @@
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="(item, i) in negatives2"
-                  :key="'neg1-' + i"
+                  :key="'neg2-' + i"
                   class="bg-red-50 border border-red-300 text-red-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm"
                 >
                   {{ item }}
@@ -218,17 +214,34 @@
       </div>
     </div>
 
-    <!-- Clear Comparison Button -->
-    <div class="mt-16 flex justify-center">
+    <!-- Clear Comparison -->
+    <div class="mt-20 flex justify-center">
       <button
         @click="clearComparison"
-        class="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-3 rounded-full transition"
+        class="bg-gradient-to-r from-pink-500 to-pink-600 hover:to-pink-700 text-white font-semibold px-6 py-3 rounded-full transition duration-200 shadow-lg"
       >
         Clear Comparison
       </button>
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+</style>
 
 <script setup>
 import { ref } from 'vue'
@@ -255,6 +268,38 @@ const negatives2 = ref([])
 const isSummarizing1 = ref(false)
 const isSummarizing2 = ref(false)
 
+import { useIntersectionObserver } from '@vueuse/core'
+
+const isVisible1 = ref(false)
+const isVisible2 = ref(false)
+
+const target1 = ref(null)
+const target2 = ref(null)
+
+// Only trigger once on first intersection
+useIntersectionObserver(
+  target1,
+  ([{ isIntersecting }]) => {
+    if (isIntersecting && !isVisible1.value) {
+      isVisible1.value = true
+    }
+  },
+  {
+    threshold: 0.1,
+  },
+)
+
+useIntersectionObserver(
+  target2,
+  ([{ isIntersecting }]) => {
+    if (isIntersecting && !isVisible2.value) {
+      isVisible2.value = true
+    }
+  },
+  {
+    threshold: 0.1,
+  },
+)
 import { getReviewTextsByMovie } from '@/firebase/reviewService'
 
 const summarizeReviewsForMovie = async (movieId, field) => {
@@ -314,12 +359,14 @@ const searchTMDB = async (field) => {
 const selectMovie = async (field, movie) => {
   if (field === 1) {
     selected1.value = movie
+    search1.value = ''
     search1.value = movie.title
     results1.value = []
     await loadPieChartData(movie.id, field)
     await summarizeReviewsForMovie(movie.id, field)
   } else {
     selected2.value = movie
+    search2.value = ''
     search2.value = movie.title
     results2.value = []
     await loadPieChartData(movie.id, field)

@@ -48,9 +48,9 @@ const props = defineProps({
 
 const tabs = [
   { key: 'dashboard', label: 'Dashboard', icon: HomeIcon },
-  { key: 'reviews', label: 'Review History', icon: DocumentTextIcon },
-  { key: 'watchlist', label: 'Watchlist', icon: HeartIcon },
-  { key: 'profile', label: 'Profile', icon: UserCircleIcon },
   { key: 'recommendations', label: 'Recommendations', icon: StarIcon },
+  { key: 'watchlist', label: 'Watchlist', icon: HeartIcon },
+  { key: 'reviews', label: 'Review History', icon: DocumentTextIcon },
+  { key: 'profile', label: 'Profile', icon: UserCircleIcon },
 ]
 </script>

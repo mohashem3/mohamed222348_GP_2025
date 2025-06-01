@@ -19,19 +19,31 @@
       <p class="text-sm md:text-base mt-1">Here are some handpicked movies we think you'll love.</p>
     </div>
 
-    <div v-if="recommendedMovies.length">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        <MovieCard
-          v-for="movie in recommendedMovies"
-          :key="movie.id"
-          :movie-id="movie.id"
-          :title="movie.title"
-          :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
-          :genre="movie.genre_ids"
-          :release-date="movie.release_date"
-        />
-      </div>
+    <div v-if="recommendedMovies.length" class="mb-10">
+      <Swiper
+        :slides-per-view="1.2"
+        :space-between="15"
+        :breakpoints="{
+          640: { slidesPerView: 2 },
+          768: { slidesPerView: 2.5 },
+          1024: { slidesPerView: 3 },
+        }"
+        :modules="[Navigation]"
+        :navigation="true"
+        class="mySwiper"
+      >
+        <SwiperSlide v-for="movie in recommendedMovies" :key="movie.id">
+          <MovieCard
+            :movie-id="movie.id"
+            :title="movie.title"
+            :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
+            :genre="movie.genre_ids"
+            :release-date="movie.release_date"
+          />
+        </SwiperSlide>
+      </Swiper>
     </div>
+
     <p v-else class="text-gray-500 mb-12">No review-based recommendations available yet.</p>
 
     <!-- Watchlist-Based Recommendations -->
@@ -51,19 +63,31 @@
       <p class="text-sm md:text-base mt-1">These picks might also be your taste:</p>
     </div>
 
-    <div v-if="watchlistBasedRecommendations.length">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        <MovieCard
-          v-for="movie in watchlistBasedRecommendations"
-          :key="movie.id"
-          :movie-id="movie.id"
-          :title="movie.title"
-          :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
-          :genre="movie.genre_ids"
-          :release-date="movie.release_date"
-        />
-      </div>
+    <div v-if="watchlistBasedRecommendations.length" class="mb-10">
+      <Swiper
+        :slides-per-view="1.2"
+        :space-between="15"
+        :breakpoints="{
+          640: { slidesPerView: 2 },
+          768: { slidesPerView: 2.5 },
+          1024: { slidesPerView: 3 },
+        }"
+        :modules="[Navigation]"
+        :navigation="true"
+        class="mySwiper"
+      >
+        <SwiperSlide v-for="movie in watchlistBasedRecommendations" :key="movie.id">
+          <MovieCard
+            :movie-id="movie.id"
+            :title="movie.title"
+            :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
+            :genre="movie.genre_ids"
+            :release-date="movie.release_date"
+          />
+        </SwiperSlide>
+      </Swiper>
     </div>
+
     <p v-else class="text-gray-500 mb-12">No watchlist-based recommendations available yet.</p>
 
     <!-- Actor-Based Recommendations -->
@@ -88,19 +112,40 @@
       <p class="text-sm md:text-base">Here are some of their best movies:</p>
     </div>
 
-    <div v-if="actorBasedRecommendations.length">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <MovieCard
-          v-for="movie in actorBasedRecommendations"
-          :key="movie.id"
-          :movie-id="movie.id"
-          :title="movie.title"
-          :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
-          :genre="movie.genre_ids"
-          :release-date="movie.release_date"
-        />
+    <div v-if="Object.keys(actorMovieMap).length">
+      <div v-for="(movies, actorName) in actorMovieMap" :key="actorName" class="mb-10">
+        <div
+          class="inline-block bg-white text-blue-800 text-sm font-semibold px-4 py-[6px] rounded-full shadow mb-4"
+        >
+          {{ actorName }}'s Movies
+        </div>
+
+        <Swiper
+          :slides-per-view="1.2"
+          :space-between="15"
+          :breakpoints="{
+            640: { slidesPerView: 2 },
+            768: { slidesPerView: 2.5 },
+            1024: { slidesPerView: 3 },
+          }"
+          :modules="[Navigation]"
+          :navigation="true"
+          :pagination="false"
+          class="mySwiper"
+        >
+          <SwiperSlide v-for="movie in movies" :key="movie.id">
+            <MovieCard
+              :movie-id="movie.id"
+              :title="movie.title"
+              :poster="'https://image.tmdb.org/t/p/w500' + movie.poster_path"
+              :genre="movie.genre_ids"
+              :release-date="movie.release_date"
+            />
+          </SwiperSlide>
+        </Swiper>
       </div>
     </div>
+
     <p v-else class="text-gray-500">No actor-based recommendations available yet.</p>
   </div>
 </template>
@@ -113,6 +158,11 @@ import { getMoviesByGenre, getGenreMap, getActorMovies } from '@/services/tmdb'
 import { db } from '@/firebase/firebaseConfig'
 import { collection, getDocs } from 'firebase/firestore'
 import MovieCard from '@/components/MovieCard.vue'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import 'swiper/css'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
+import { Navigation } from 'swiper/modules'
 
 const allUserReviews = ref([])
 const watchlistMovies = ref([])
@@ -127,7 +177,7 @@ const watchlistBasedRecommendations = ref([])
 
 const topRatedActorIds = ref([])
 const topRatedActorNames = ref([])
-const actorBasedRecommendations = ref([])
+//const actorBasedRecommendations = ref([])
 
 const detectFavoriteGenre = async () => {
   const genreCount = {}
@@ -190,37 +240,34 @@ const detectTopRatedActors = async () => {
   const castRatingsSnap = await getDocs(collection(db, 'users', userId, 'cast_ratings'))
   const ratings = castRatingsSnap.docs.map((doc) => doc.data())
 
-  const positiveCounts = {}
+  // 💡 Only include ACTORS with exactly 5-star rating
+  const topRatedOnly = ratings.filter((r) => r.role === 'Actor' && Number(r.rating) === 5)
 
-  for (const r of ratings) {
-    const id = r.castId
-    const score = Number(r.rating)
-    if (score >= 4) {
-      positiveCounts[id] = (positiveCounts[id] || 0) + 1
-    }
-  }
+  // 🧠 Map to hold castId → name
+  const uniqueActors = new Map()
 
-  const sorted = Object.entries(positiveCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
+  for (const r of topRatedOnly) {
+    const castId = r.castId
 
-  topRatedActorIds.value = sorted.map(([id]) => id)
+    // Skip if we already fetched this actor
+    if (uniqueActors.has(castId)) continue
 
-  const names = []
-  for (const id of topRatedActorIds.value) {
     try {
       const res = await fetch(
-        `https://api.themoviedb.org/3/person/${id}?api_key=${import.meta.env.VITE_TMDB_API_KEY}`,
+        `https://api.themoviedb.org/3/person/${castId}?api_key=${import.meta.env.VITE_TMDB_API_KEY}`,
       )
       const data = await res.json()
-      names.push(data.name || 'Unknown')
+      uniqueActors.set(castId, data.name || 'Unknown')
     } catch (err) {
-      console.warn(`Failed to fetch actor name for ID ${id}`, err)
-      names.push('Unknown')
+      console.warn(`Failed to fetch actor ${castId}`, err)
+      uniqueActors.set(castId, 'Unknown')
     }
   }
 
-  topRatedActorNames.value = names
+  // 🧩 Pick top 5 actors
+  const topEntries = Array.from(uniqueActors.entries()).slice(0, 5)
+  topRatedActorIds.value = topEntries.map(([id]) => id)
+  topRatedActorNames.value = topEntries.map(([, name]) => name)
 }
 
 const fetchRecommendedMovies = async () => {
@@ -255,41 +302,31 @@ const fetchWatchlistBasedRecommendations = async () => {
   }
 }
 
+const actorMovieMap = ref({}) // 💡 key: actor name, value: array of movies
+
 const fetchActorBasedRecommendations = async () => {
-  try {
-    const allMovieIds = new Set()
+  actorMovieMap.value = {} // reset
 
-    for (const actorId of topRatedActorIds.value) {
+  const reviewedIds = new Set(allUserReviews.value.map((r) => String(r.movieId)))
+  const watchlistIds = new Set(watchlistMovies.value.map((m) => String(m.id)))
+
+  for (let i = 0; i < topRatedActorIds.value.length; i++) {
+    const actorId = topRatedActorIds.value[i]
+    const actorName = topRatedActorNames.value[i] || 'Unknown'
+
+    try {
       const movies = await getActorMovies(actorId)
-      for (const movie of movies) {
-        allMovieIds.add(movie.id)
-      }
-    }
-
-    const reviewedIds = new Set(allUserReviews.value.map((r) => String(r.movieId)))
-    const watchlistIds = new Set(watchlistMovies.value.map((m) => String(m.id)))
-
-    const filteredMovieIds = [...allMovieIds].filter(
-      (id) => !reviewedIds.has(String(id)) && !watchlistIds.has(String(id)),
-    )
-
-    const topMovies = []
-    for (const id of filteredMovieIds.slice(0, 15)) {
-      try {
-        const res = await fetch(
-          `https://api.themoviedb.org/3/movie/${id}?api_key=${import.meta.env.VITE_TMDB_API_KEY}`,
+      const filtered = movies
+        .filter(
+          (movie) => !reviewedIds.has(String(movie.id)) && !watchlistIds.has(String(movie.id)),
         )
+        .slice(0, 15)
 
-        const data = await res.json()
-        topMovies.push(data)
-      } catch {
-        // Do nothing – suppress warning
-      }
+      actorMovieMap.value[actorName] = filtered
+    } catch (err) {
+      console.warn(`Could not fetch movies for ${actorName}`, err)
+      actorMovieMap.value[actorName] = []
     }
-
-    actorBasedRecommendations.value = topMovies
-  } catch (err) {
-    console.error('Error in fetchActorBasedRecommendations:', err)
   }
 }
 
@@ -311,3 +348,13 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+/* Add this in your main CSS or in <style scoped> */
+.swiper-button-prev,
+.swiper-button-next {
+  color: #1f2937; /* Gray-800 */
+  top: 40%;
+  transform: translateY(-50%);
+}
+</style>
