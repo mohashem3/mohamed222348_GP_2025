@@ -1,6 +1,27 @@
 <template>
-  <div class="px-6 bg-gray-50 min-h-screen">
+  <div class="pl-8 pr-6 pb-12 bg-gray-50 min-h-screen">
+    <!-- Main Title -->
     <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
+
+    <!-- Avatar + Welcome -->
+    <!-- Avatar + Welcome -->
+    <div class="flex items-start gap-2.5 mb-4">
+      <!-- Avatar -->
+      <div
+        class="w-14 h-14 rounded-full bg-yellow-400 flex items-center justify-center text-white text-lg font-bold shadow-inner border-2 border-white"
+      >
+        {{ userInitials }}
+      </div>
+
+      <!-- Welcome Text -->
+      <div class="mt-2.5 leading-none">
+        <p
+          class="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 text-transparent bg-clip-text"
+        >
+          Welcome, {{ userName }}
+        </p>
+      </div>
+    </div>
 
     <!-- First Row: 2 KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
@@ -53,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getReviewsByUser } from '@/firebase/reviewService'
 import { currentUser } from '@/firebase/userState'
 import { db } from '@/firebase/firebaseConfig'
@@ -62,12 +83,23 @@ import { getGenreMap } from '@/services/tmdb'
 import KpiCard from '@/components/kpiCard.vue'
 import VisualCharts from '@/components/VisualCharts.vue'
 
-// KPI states
+// State
 const reviews = ref([])
 const mostReviewedGenre = ref('')
 const topRatedMovies = ref([])
 const topActors = ref([])
 const topDirectors = ref([])
+
+const userName = computed(() => currentUser.value?.displayName || 'User')
+const userInitials = computed(() => {
+  const name = userName.value
+  return name
+    .split(' ')
+    .map((word) => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+})
 
 onMounted(async () => {
   if (!currentUser.value?.uid) return
